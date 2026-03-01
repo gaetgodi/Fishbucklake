@@ -518,10 +518,10 @@ div.fbl-content-image-float-right {
    fbl-sport-shows.php plugin.
    ========================================================= */
 
-body.fbl-no-shows #menu-item-221698 {
+body.fbl-no-shows li#menu-item-221698 {
     display: none !important;
 }
 
-body.fbl-no-events #menu-item-223594 {
+body.fbl-no-events li#menu-item-223594 {
     display: none !important;
 }
