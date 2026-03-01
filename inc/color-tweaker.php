@@ -66,6 +66,19 @@ class FBL_Color_Tweaker {
             'label'       => 'Background — Alt Section',
             'description' => 'Background color of alternate content sections. Changes: the Members of Ontario section and any other sections using the alt background token.',
         ],
+        /* ---- UI COMPONENT BACKGROUNDS ---- */
+        'form-bg' => [
+            'label'       => 'Background — Form Box',
+            'description' => 'Background of the login and contact form container. Sits between the page background and the input fields to create visual layering.',
+        ],
+        'input-bg' => [
+            'label'       => 'Background — Form Inputs',
+            'description' => 'Background of all form input fields, textareas, and select dropdowns. Should be lighter than the form box for visual depth.',
+        ],
+        'drawer-bg' => [
+            'label'       => 'Background — Mobile Drawer',
+            'description' => 'Background of the mobile navigation drawer sheets. Should contrast with the dark page background so menu links are readable.',
+        ],
         /* ---- TEXT ---- */
         'text-main' => [
             'label'       => 'Text — Body',
