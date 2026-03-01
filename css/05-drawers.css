@@ -239,7 +239,7 @@ body {
     max-height: 65vh !important;
     overflow-y: auto !important;
     
-    background: var(--fbl-content-bg) !important;  /* Medium grey — genuine contrast with dark text */
+    background: var(--fbl-drawer-bg) !important;  /* Dedicated drawer token — tweakable per skin */
     border-top: 2px solid var(--fbl-border-color) !important;
     
     transform: translateY(100%);
@@ -446,22 +446,3 @@ body {
     display: none !important;
   }
 }
-/* ===================================================
-   DRAWER SHEET — CONTRAST FIX
-   content-bg background with dark text (tweaker-safe)
-   =================================================== */
-   @media (max-width: 980px) {
-    #fbl-mm-bottom-sheet,
-    #fbl-footer-mm-bottom-sheet {
-      background: var(--fbl-drawer-bg) !important;
-    }
-  
-    .fbl-mm-sheet-title,
-    #fbl-mm-close-icon::before,
-    .fbl-mm-close-icon::before,
-    .fbl-mm-heading,
-    .fbl-mm-item a,
-    .fbl-mm-item.menu-item-221224 > a {
-      color: var(--fbl-input-text) !important;
-    }
-  }

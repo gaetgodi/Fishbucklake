@@ -493,7 +493,7 @@ div.fbl-content-image-float-right {
 .fbl-outpost-container {
   display: flex !important;
   flex-wrap: wrap !important;
-  gap: 10px !important; /* Reduced from 20px to 10px */
+  gap: 10px !important;
   align-items: flex-start !important;
   justify-content: center !important;
 }
@@ -510,3 +510,17 @@ div.fbl-content-image-float-right {
   max-width: 408px !important;
   height: auto !important;
 }
+
+/* =========================================================
+   MENU VISIBILITY — SHOWS AND EVENTS
+   Hide menu items when no upcoming entries exist.
+   Body classes fbl-no-shows / fbl-no-events added by
+   fbl-sport-shows.php plugin.
+   ========================================================= */
+
+body.fbl-no-shows #menu-item-221698 {
+    display: none !important;
+}
+
+/* Placeholder — replace menu-item-EVENTS with real ID when Events menu item is created */
+/* body.fbl-no-events #menu-item-EVENTS { display: none !important; } */
