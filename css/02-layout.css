@@ -522,5 +522,6 @@ body.fbl-no-shows #menu-item-221698 {
     display: none !important;
 }
 
-/* Placeholder — replace menu-item-EVENTS with real ID when Events menu item is created */
-/* body.fbl-no-events #menu-item-EVENTS { display: none !important; } */
+body.fbl-no-events #menu-item-223594 {
+    display: none !important;
+}
