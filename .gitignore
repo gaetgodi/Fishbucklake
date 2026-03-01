@@ -1,0 +1,10 @@
+*.log
+*.bak
+*.orig
+*.backup
+.DS_Store
+Thumbs.db
+.vscode/
+node_modules/
+css.backup
+style.css.backup

@@ -1,0 +1,370 @@
+/*
+=================================================
+03-side-menus.css
+Desktop side navigation menus (left & right columns)
+Site: fishbucklake.com (staging)
+=================================================
+*/
+
+/* =========================================================
+   FBL SIDE MENUS (LEFT / RIGHT COLUMNS)
+   Joomla-style vertical navigation
+   Desktop-only behavior
+
+   Class structure:
+   .fbl-side-menu  — on the heading module (background, h4 color)
+   #fbl-left-menu  — on the left menu module
+   #fbl-right-menu — on the right menu module
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   BASE RESET — remove Divi menu panels & backgrounds
+   --------------------------------------------------------- */
+
+#fbl-left-menu,
+#fbl-right-menu,
+#fbl-left-menu .et_pb_menu__container,
+#fbl-right-menu .et_pb_menu__container,
+#fbl-left-menu .et_pb_menu__wrap,
+#fbl-right-menu .et_pb_menu__wrap,
+#fbl-left-menu .et_pb_menu_inner,
+#fbl-right-menu .et_pb_menu_inner,
+#fbl-left-menu nav,
+#fbl-right-menu nav,
+#fbl-left-menu ul,
+#fbl-right-menu ul {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* ---------------------------------------------------------
+   BACKGROUND — on heading module column via .fbl-side-menu
+   --------------------------------------------------------- */
+
+.fbl-side-menu {
+  background-color: var(--fbl-sidemenu-bg) !important;
+  box-shadow: none !important;
+  border: none !important;
+  align-self: flex-start !important;
+}
+
+/* ---------------------------------------------------------
+   VERTICAL MENU STRUCTURE
+   --------------------------------------------------------- */
+
+#fbl-left-menu ul,
+#fbl-right-menu ul {
+  list-style: none !important;
+  padding: 0;
+  margin: 0;
+}
+
+#fbl-left-menu ul.et-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.1rem;
+}
+
+#fbl-right-menu ul.et-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0;
+}
+
+/* ---------------------------------------------------------
+   MENU LINKS — token-controlled colors
+   --------------------------------------------------------- */
+
+/* Left menu — large, centered */
+#fbl-left-menu ul.et-menu > li > a {
+  display: block;
+  color: var(--fbl-sidemenu-link) !important;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  padding: 0.1rem 0;
+  text-decoration: none;
+  text-align: center;
+}
+
+/* Right menu — smaller, left-aligned, tight spacing */
+#fbl-right-menu ul.et-menu > li > a {
+  display: block;
+  color: var(--fbl-sidemenu-link) !important;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  padding: 0.05rem 0;
+  text-decoration: none;
+  text-align: left;
+}
+
+/* Top-level hover — uses topmenu-hover token */
+#fbl-left-menu ul.et-menu > li > a:hover,
+#fbl-right-menu ul.et-menu > li > a:hover {
+  color: var(--fbl-topmenu-hover) !important;
+  text-decoration: underline;
+}
+
+/* Remove ALL link behavior from Activities menu item */
+#fbl-left-menu .menu-item-221224 > a,
+#fbl-right-menu .menu-item-221224 > a {
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none !important;
+}
+
+/* Lock Activities item to gold — no hover change */
+#fbl-left-menu ul.et-menu > li.menu-item-221224 > a,
+#fbl-left-menu ul.et-menu > li.menu-item-221224 > a:hover,
+#fbl-right-menu ul.et-menu > li.menu-item-221224 > a,
+#fbl-right-menu ul.et-menu > li.menu-item-221224 > a:hover {
+    color: var(--fbl-gold) !important;
+    opacity: 1 !important;
+    text-decoration: none !important;
+}
+
+/* ---------------------------------------------------------
+   HEADINGS ABOVE MENUS — still on .fbl-side-menu
+   --------------------------------------------------------- */
+
+.fbl-side-menu h4,
+.fbl-side-menu .et_pb_text h4 {
+  color: var(--fbl-gold);
+  margin-bottom: 0.5rem;
+}
+
+/* =========================================================
+   DESKTOP BEHAVIOR — STATIC, ALWAYS-OPEN MENUS
+   ========================================================= */
+
+@media (min-width: 981px) {
+  #fbl-left-menu,
+  #fbl-right-menu {
+    margin-bottom: var(--fbl-space-md);
+  }
+
+  /* Ensure items behave as vertical list rows */
+  #fbl-left-menu .et-menu > li,
+  #fbl-right-menu .et-menu > li {
+    display: block !important;
+    position: relative !important;
+    margin-bottom: 4px;
+  }
+
+  /* -------------------------------------------------------
+     SUB-MENUS — ALWAYS OPEN, IN FLOW (NO DROPDOWNS)
+     ------------------------------------------------------- */
+
+  #fbl-left-menu ul.sub-menu,
+  #fbl-right-menu ul.sub-menu {
+    display: block !important;
+    position: static !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding-left: var(--fbl-space-sm);
+    margin: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  #fbl-left-menu ul.sub-menu li,
+  #fbl-right-menu ul.sub-menu li {
+    display: block !important;
+    position: static !important;
+  }
+
+  /* Parent item spacing */
+  #fbl-left-menu .et-menu > li.menu-item-has-children,
+  #fbl-right-menu .et-menu > li.menu-item-has-children {
+    position: relative;
+    padding-bottom: 0.25rem;
+  }
+
+  /* Divider line */
+  #fbl-right-menu .et-menu > li.menu-item-has-children::after {
+    content: "";
+    position: absolute;
+    left: 5%;
+    width: 76%;
+    top: calc(1.4em + 0.4rem);
+    height: 1px;
+    background-color: var(--fbl-menu-separator);
+    opacity: 0.90;
+    pointer-events: none;
+  }
+
+  /* Left menu divider — centered, just below the top-level link */
+  #fbl-left-menu .et-menu > li.menu-item-has-children::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 76%;
+    top: calc(1.5rem * 1.2 + 0.1rem + 2px);
+    height: 1px;
+    background-color: var(--fbl-menu-separator);
+    opacity: 0.90;
+    pointer-events: none;
+  }
+
+  /* Push submenu down so it starts AFTER the divider */
+  #fbl-left-menu .et-menu > li.menu-item-has-children > ul.sub-menu,
+  #fbl-right-menu .et-menu > li.menu-item-has-children > ul.sub-menu {
+    margin-top: 0.6rem !important;
+  }
+
+  /* ---------------------------------------------------------
+     STICKY SIDE COLUMNS — desktop only
+     Sticks after header scrolls out of view
+     --------------------------------------------------------- */
+
+  .fbl-side-menu {
+    position: sticky !important;
+    top: 0;
+  }
+}
+
+/* =========================================================
+   FORCE STATIC LIST MODE (DIVI 5 DROPDOWN REMOVAL)
+   ========================================================= */
+
+/* Remove dropdown arrows */
+#fbl-left-menu .et-menu > li.menu-item-has-children > a::after,
+#fbl-right-menu .et-menu > li.menu-item-has-children > a::after {
+  display: none !important;
+}
+
+/* Disable pointer behaviors that imply dropdowns */
+#fbl-left-menu .menu-item-has-children > a,
+#fbl-right-menu .menu-item-has-children > a {
+  pointer-events: auto !important;
+}
+
+/* Prevent hover / focus dropdown logic entirely */
+#fbl-left-menu .menu-item-has-children:hover > ul,
+#fbl-left-menu .menu-item-has-children:focus-within > ul,
+#fbl-right-menu .menu-item-has-children:hover > ul,
+#fbl-right-menu .menu-item-has-children:focus-within > ul {
+  display: block !important;
+}
+
+/* Ensure spacing consistency after arrow removal */
+#fbl-left-menu .et-menu > li > a,
+#fbl-right-menu .et-menu > li > a {
+  padding-right: 0 !important;
+}
+
+/* Force all sub-menus to behave as normal stacked lists */
+#fbl-left-menu ul.sub-menu,
+#fbl-right-menu ul.sub-menu {
+  display: block !important;
+  position: static !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Disable Divi hover positioning logic */
+#fbl-left-menu li:hover > ul.sub-menu,
+#fbl-right-menu li:hover > ul.sub-menu {
+  display: block !important;
+}
+
+/* Remove absolute positioning inherited from Divi */
+#fbl-left-menu ul.sub-menu li,
+#fbl-right-menu ul.sub-menu li {
+  position: static !important;
+}
+
+/* Vertical indentation */
+#fbl-left-menu ul.sub-menu,
+#fbl-right-menu ul.sub-menu {
+  margin-left: 1.2em;
+  margin-top: 0.25em;
+}
+
+/* Remove transition artifacts */
+#fbl-left-menu ul.sub-menu,
+#fbl-left-menu li,
+#fbl-right-menu ul.sub-menu,
+#fbl-right-menu li {
+  transition: none !important;
+}
+
+/* Sub-menu link colors — token-controlled */
+#fbl-left-menu ul.sub-menu > li > a,
+#fbl-right-menu ul.sub-menu > li > a {
+  color: var(--fbl-sidemenu-link) !important;
+  padding: 0.05rem 0 !important;
+  line-height: 1.3;
+  text-align: left;
+}
+
+/* Sub-menu hover — uses sidemenu-link-hover token */
+#fbl-left-menu ul.sub-menu > li > a:hover,
+#fbl-right-menu ul.sub-menu > li > a:hover {
+  color: var(--fbl-sidemenu-link-hover) !important;
+  text-decoration: underline;
+}
+
+/* Active/current page — WordPress classes + URL-based .fbl-active-link */
+#fbl-left-menu ul.et-menu > li.current-menu-item > a,
+#fbl-left-menu ul.et-menu > li.current-menu-ancestor > a,
+#fbl-right-menu ul.et-menu > li.current-menu-item > a,
+#fbl-right-menu ul.et-menu > li.current-menu-ancestor > a,
+#fbl-left-menu ul.sub-menu > li.current-menu-item > a,
+#fbl-right-menu ul.sub-menu > li.current-menu-item > a,
+#fbl-left-menu a.fbl-active-link,
+#fbl-right-menu a.fbl-active-link {
+  color: var(--fbl-sidemenu-link-active) !important;
+  font-weight: bold;
+}
+
+/* ---------------------------------------------------------
+   FBL FIX — DISABLE DIVI MOBILE MENUS IN SIDE-MENU ROW
+   --------------------------------------------------------- */
+
+.et_pb_row_2 .et_mobile_nav_menu {
+  display: none !important;
+}
+
+.et_pb_row_2 .et_pb_menu__menu {
+  display: block !important;
+}
+
+#fbl-left-menu .et_mobile_nav_menu,
+#fbl-right-menu .et_mobile_nav_menu {
+  display: none !important;
+}
+
+#fbl-left-menu .et_pb_menu__menu,
+#fbl-right-menu .et_pb_menu__menu {
+  display: block !important;
+}
+
+@media (max-width: 980px) {
+  .et_pb_menu .mobile_nav,
+  .et_mobile_nav_menu {
+    display: none !important;
+  }
+}
+
+/* =========================================================
+   PREVENT OVERLAP WHEN MENU ITEMS WRAP
+   ========================================================= */
+
+#fbl-left-menu .et_pb_menu a,
+#fbl-right-menu .et_pb_menu a,
+.fbl-menu-footer a {
+    line-height: 1.6 !important;
+    padding: 0.4rem 0 !important;
+    display: block !important;
+}

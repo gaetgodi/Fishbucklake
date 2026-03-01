@@ -1,0 +1,256 @@
+/*
+=================================================
+testimonials.css
+Testimonials Display Styling
+Site: fishbucklake.com (staging)
+Uses: 00-tokens.css design tokens
+=================================================
+*/
+
+/* Testimonials Container */
+.testimonials-container {
+    max-width: var(--fbl-content-max-width);
+    width: var(--fbl-content-width);
+    margin: 0 auto;
+    padding: var(--fbl-space-xl) var(--fbl-space-md);
+}
+
+/* Individual Testimonial */
+.testimonial-item {
+    position: relative;
+    padding: var(--fbl-space-lg) 0;
+    border-bottom: 1px solid var(--fbl-border-light);
+}
+
+.testimonial-item:last-child {
+    border-bottom: none;
+}
+
+/* Quote Mark (Optional) */
+.testimonial-item::before {
+    content: '"';
+    position: absolute;
+    top: var(--fbl-space-lg);
+    left: -40px;
+    font-size: 80px;
+    line-height: 1;
+    color: var(--fbl-gold);
+    opacity: 0.2;
+    font-family: Georgia, serif;
+}
+
+/* Testimonial Content */
+.testimonial-content {
+    color: var(--fbl-text-main);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-body-size);
+    line-height: var(--fbl-line-height);
+    margin-bottom: var(--fbl-space-md);
+}
+
+.testimonial-content p {
+    margin-bottom: var(--fbl-space-sm);
+}
+
+.testimonial-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Author Information */
+.testimonial-author {
+    margin-top: var(--fbl-space-md);
+    padding-top: var(--fbl-space-sm);
+}
+
+.testimonial-author-name {
+    color: var(--fbl-gold);
+    font-family: var(--fbl-font-heading);
+    font-size: var(--fbl-font-lg);
+    font-weight: 600;
+    margin-bottom: var(--fbl-space-xxs);
+}
+
+.testimonial-author-location {
+    color: var(--fbl-gold);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    opacity: 0.8;
+    font-style: italic;
+}
+
+/* Rating Stars */
+.testimonial-rating {
+    margin-top: var(--fbl-space-xs);
+    color: var(--fbl-gold);
+    font-size: var(--fbl-font-lg);
+}
+
+.testimonial-rating .star {
+    display: inline-block;
+    margin-right: 2px;
+}
+
+/* Category Badge (Optional) */
+.testimonial-category {
+    display: inline-block;
+    padding: var(--fbl-space-xxs) var(--fbl-space-sm);
+    background: var(--fbl-mid);
+    color: var(--fbl-gold);
+    font-size: var(--fbl-font-sm);
+    border-radius: var(--fbl-radius);
+    margin-top: var(--fbl-space-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Featured/Highlighted Testimonial */
+.testimonial-item.featured {
+    background: var(--fbl-mid);
+    padding: var(--fbl-space-lg);
+    border-radius: var(--fbl-radius-lg);
+    border: 2px solid var(--fbl-gold);
+    box-shadow: var(--fbl-shadow);
+}
+
+.testimonial-item.featured .testimonial-content {
+    font-size: calc(var(--fbl-body-size) * 1.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .testimonials-container {
+        width: 95%;
+        padding: var(--fbl-space-md) var(--fbl-space-sm);
+    }
+    
+    .testimonial-item {
+        padding: var(--fbl-space-md) 0;
+    }
+    
+    .testimonial-item::before {
+        display: none; /* Hide large quote mark on mobile */
+    }
+    
+    .testimonial-content {
+        font-size: var(--fbl-font-md);
+    }
+    
+    .testimonial-author-name {
+        font-size: var(--fbl-font-md);
+    }
+    
+    .testimonial-author-location {
+        font-size: var(--fbl-font-sm);
+    }
+}
+
+/* Filter/Category Selector (if you want filtering) */
+.testimonial-filters {
+    margin-bottom: var(--fbl-space-lg);
+    text-align: center;
+}
+
+.testimonial-filter-btn {
+    display: inline-block;
+    padding: var(--fbl-space-xs) var(--fbl-space-md);
+    margin: var(--fbl-space-xxs);
+    background: transparent;
+    color: var(--fbl-gold);
+    border: 1px solid var(--fbl-gold);
+    border-radius: var(--fbl-radius);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.testimonial-filter-btn:hover,
+.testimonial-filter-btn.active {
+    background: var(--fbl-gold);
+    color: var(--fbl-dark);
+}
+
+/* Grid Layout Option (if you want cards instead of list) */
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: var(--fbl-space-lg);
+    margin-top: var(--fbl-space-lg);
+}
+
+.testimonial-card {
+    background: var(--fbl-mid);
+    padding: var(--fbl-space-lg);
+    border-radius: var(--fbl-radius-lg);
+    border: 1px solid var(--fbl-border-light);
+    box-shadow: var(--fbl-shadow);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--fbl-gold);
+}
+
+/* Alternative: Slider/Carousel Item */
+.testimonial-slide {
+    text-align: center;
+    padding: var(--fbl-space-xl);
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.testimonial-slide .testimonial-content {
+    font-size: var(--fbl-title-size);
+    margin-bottom: var(--fbl-space-lg);
+}
+
+.testimonial-slide .testimonial-author {
+    margin-top: var(--fbl-space-lg);
+}
+
+/* Load More Button */
+.testimonials-load-more {
+    text-align: center;
+    margin-top: var(--fbl-space-xl);
+}
+
+.testimonials-load-more-btn {
+    display: inline-block;
+    padding: var(--fbl-space-sm) var(--fbl-space-lg);
+    background: transparent;
+    color: var(--fbl-gold);
+    border: 2px solid var(--fbl-gold);
+    border-radius: var(--fbl-radius);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.testimonials-load-more-btn:hover {
+    background: var(--fbl-gold);
+    color: var(--fbl-dark);
+}
+
+/* Page Title */
+.testimonials-page-title {
+    color: var(--fbl-text-heading);
+    font-family: var(--fbl-font-heading);
+    font-size: var(--fbl-bottom-size);
+    text-align: center;
+    margin-bottom: var(--fbl-space-xl);
+    padding-bottom: var(--fbl-space-md);
+    border-bottom: 2px solid var(--fbl-gold);
+}
+
+/* No Results Message */
+.testimonials-no-results {
+    text-align: center;
+    color: var(--fbl-text-main);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-lg);
+    padding: var(--fbl-space-xl);
+    opacity: 0.7;
+}

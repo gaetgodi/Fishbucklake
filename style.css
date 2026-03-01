@@ -1,0 +1,48 @@
+/*
+Theme Name: Divi Child
+Theme URI: https://www.elegantthemes.com/gallery/divi/
+Description: Child theme for Divi 5
+Author: Gaëtan Godin
+Author URI: https://fishbucklake.com
+Template: Divi
+Version: 2.0.3
+*/
+
+/* =================================================
+   MODULAR CSS IMPORTS - GLOBAL STYLES ONLY
+   All styles are organized in the /css directory
+   ================================================= */
+
+/* Core Design System 
+
+@import url("css/00-tokens.css");
+
+/* Global Styles 
+@import url("css/01-global.css");
+@import url("css/02-layout.css");
+@import url("css/03-side-menus.css");
+@import url("css/04-footer.css");
+@import url("css/05-drawers.css");
+@import url("css/06-components.css");
+@import url('css/07-pages.css');
+
+*/
+/* =================================================
+   PAGE-SPECIFIC STYLES (Conditionally Loaded)
+   These are loaded via functions.php only on their pages:
+   
+   - faq-system-final.css       → Loaded only on /faqs page
+   - testimonials.css           → Loaded only on /testimonials page
+   - sport-shows-enhanced.css   → Loaded only on /2026-sport-shows page
+   
+   DO NOT import these here - they're conditionally enqueued!
+   ================================================= */
+
+/* =================================================
+   NOTES:
+   - Core styles (00-07) load on every page
+   - Page-specific styles load conditionally via functions.php
+   - No duplicate loading
+   - Better performance (smaller CSS on most pages)
+   - Version bumped to 2.0.3 for cleanup
+   ================================================= */

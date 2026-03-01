@@ -1,0 +1,455 @@
+/*
+=================================================
+00-tokens.css
+Multi-Theme Design System
+Site: fishbucklake.com (staging)
+=================================================
+*/
+
+/* ============================================
+   BASE TOKENS (SHARED ACROSS ALL THEMES)
+   ============================================ */
+:root {
+    /* TYPOGRAPHY (same for all themes) */
+    --fbl-font-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --fbl-font-heading: "Roboto Slab", serif;
+
+    --fbl-font-sm: 14px;
+    --fbl-font-md: 16px;
+    --fbl-font-lg: 20px;
+    --fbl-font-xl: 28px;
+
+    /* SPACING SCALE (same for all themes) */
+    --fbl-space-xxs: 4px;
+    --fbl-space-xs: 8px;
+    --fbl-space-sm: 12px;
+    --fbl-space-md: 20px;
+    --fbl-space-lg: 32px;
+    --fbl-space-xl: 48px;
+
+    /* RADIUS (same for all themes) */
+    --fbl-radius: 6px;
+    --fbl-radius-lg: 10px;
+
+    /* LAYOUT/SIZING (same for all themes) */
+    --fbl-site-max-width: 1400px;
+    --fbl-content-width: 80%;
+    --fbl-content-max-width: 1400px;
+    --fbl-content-min-width: 320px;
+
+    /* INTRO BLOCK TYPOGRAPHY */
+    --fbl-body-size: 1.15rem;
+    --fbl-title-size: 1.55rem;
+    --fbl-bottom-size: 1.9rem;
+    --fbl-line-height: 1.75;
+
+    /* GLOBAL COLORS */
+    --fbl-link: #007000;
+    --fbl-menu-separator: orange;
+
+    /* RATES PAGE COLOR TOKENS */
+    --fbl-tan-box: #eee8aa;
+    --fbl-green-arrow: #6b8e23;
+    --fbl-box-border: #000000;
+    --fbl-rates-text: #000000;
+    --fbl-bright-gold: #bf9000;
+}
+
+/* ============================================
+   THEME: CLASSIC DARK
+   Deep charcoal base, warm gold accents
+   ============================================ */
+body.fbl-skin-classic {
+    /* BRAND COLORS */
+    --fbl-gold:      #d6c48a;
+    --fbl-light:     #f8f4e8;
+    --fbl-dark:      #111111;
+    --fbl-mid:       #222222;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #2e2e2e;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #111111;  /* Main page background */
+    --fbl-header-bg:    #111111;  /* Header section background */
+    --fbl-bg-alt:       #1c1c1c;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #0a0a0a;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #1a1a1a;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #0a0a0a;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #111111;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #d6c48a;  /* Body text */
+    --fbl-text-heading: #d6c48a;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #d6c48a;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #d6c48a;
+    --fbl-border-light: rgba(255,255,255,0.12);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.5);
+
+    /* FOOTER */
+    --fbl-footer-text:       #d6c48a;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #ffffff;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #d6c48a;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #ffffff;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #f0e0b0;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #d6c48a;
+    --et_color_accent:         #d6c48a;
+    --et_pb_text_color:        #f8f4e8;
+    --et_pb_text_color_light:  #f8f4e8;
+    --et_pb_heading_color:     #d6c48a;
+    --et_pb_background_color:  #111111;
+}
+
+/* ============================================
+   THEME: LIGHT
+   Warm cream base, rich amber gold accents
+   ============================================ */
+body.fbl-skin-light {
+    /* BRAND COLORS */
+    --fbl-gold:      #b8941f;
+    --fbl-light:     #f8f4e8;
+    --fbl-dark:      #2c2416;
+    --fbl-mid:       #e8dcc8;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #d4c8b5;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #f8f4e8;  /* Main page background */
+    --fbl-header-bg:    #f8f4e8;  /* Header section background */
+    --fbl-bg-alt:       #ffffff;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #2c2416;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #ede8dc;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #2c2416;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #2c2416;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #2c2416;  /* Body text */
+    --fbl-text-heading: #b8941f;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #b8941f;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #b8941f;
+    --fbl-border-light: rgba(184,148,31,0.2);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.12);
+
+    /* FOOTER */
+    --fbl-footer-text:       #b8941f;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #f8f4e8;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #b8941f;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #2c2416;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #8a6e10;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #b8941f;
+    --et_color_accent:         #b8941f;
+    --et_pb_text_color:        #2c2416;
+    --et_pb_text_color_light:  #2c2416;
+    --et_pb_heading_color:     #b8941f;
+    --et_pb_background_color:  #f8f4e8;
+}
+
+/* ============================================
+   THEME: MEDIUM
+   Navy blue base, warm gold accents
+   ============================================ */
+body.fbl-skin-medium {
+    /* BRAND COLORS */
+    --fbl-gold:      #d6c48a;
+    --fbl-light:     #e8dcc8;
+    --fbl-dark:      #1e3a5f;
+    --fbl-mid:       #2a4a6f;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #243f5e;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #1e3a5f;  /* Main page background */
+    --fbl-header-bg:    #1e3a5f;  /* Header section background */
+    --fbl-bg-alt:       #264870;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #152d4a;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #243d5e;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #152d4a;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #1e3a5f;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #e8dcc8;  /* Body text */
+    --fbl-text-heading: #d6c48a;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #d6c48a;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #d6c48a;
+    --fbl-border-light: rgba(214,196,138,0.2);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.35);
+
+    /* FOOTER */
+    --fbl-footer-text:       #d6c48a;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #ffffff;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #d6c48a;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #ffffff;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #f0e0b0;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #d6c48a;
+    --et_color_accent:         #d6c48a;
+    --et_pb_text_color:        #e8dcc8;
+    --et_pb_text_color_light:  #e8dcc8;
+    --et_pb_heading_color:     #d6c48a;
+    --et_pb_background_color:  #1e3a5f;
+}
+
+/* ============================================
+   THEME: FOREST
+   Deep forest green base, warm gold accents
+   ============================================ */
+body.fbl-skin-forest {
+    /* BRAND COLORS */
+    --fbl-gold:      #d6c48a;
+    --fbl-light:     #e8dcc8;
+    --fbl-dark:      #1a3a1a;
+    --fbl-mid:       #2a4a2a;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #223822;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #1a3a1a;  /* Main page background */
+    --fbl-header-bg:    #1a3a1a;  /* Header section background */
+    --fbl-bg-alt:       #224822;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #112411;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #1e3e1e;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #112411;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #1a3a1a;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #e8dcc8;  /* Body text */
+    --fbl-text-heading: #d6c48a;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #d6c48a;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #d6c48a;
+    --fbl-border-light: rgba(214,196,138,0.2);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.35);
+
+    /* FOOTER */
+    --fbl-footer-text:       #d6c48a;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #ffffff;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #d6c48a;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #ffffff;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #f0e0b0;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #d6c48a;
+    --et_color_accent:         #d6c48a;
+    --et_pb_text_color:        #e8dcc8;
+    --et_pb_text_color_light:  #e8dcc8;
+    --et_pb_heading_color:     #d6c48a;
+    --et_pb_background_color:  #1a3a1a;
+}
+
+/* ============================================
+   THEME: SUNSET
+   Deep burnt sienna base, sandy orange accents
+   ============================================ */
+body.fbl-skin-sunset {
+    /* BRAND COLORS */
+    --fbl-gold:      #f4a460;
+    --fbl-light:     #fff5ee;
+    --fbl-dark:      #2c1810;
+    --fbl-mid:       #4a2818;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #3a2010;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #2c1810;  /* Main page background */
+    --fbl-header-bg:    #2c1810;  /* Header section background */
+    --fbl-bg-alt:       #3a2218;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #1e100a;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #361e14;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #1e100a;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #2c1810;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #fff5ee;  /* Body text */
+    --fbl-text-heading: #f4a460;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #f4a460;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #f4a460;
+    --fbl-border-light: rgba(244,164,96,0.2);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.4);
+
+    /* FOOTER */
+    --fbl-footer-text:       #f4a460;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #ffffff;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #f4a460;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #ffffff;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #ffc899;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #f4a460;
+    --et_color_accent:         #f4a460;
+    --et_pb_text_color:        #fff5ee;
+    --et_pb_text_color_light:  #fff5ee;
+    --et_pb_heading_color:     #f4a460;
+    --et_pb_background_color:  #2c1810;
+}
+
+/* ============================================
+   THEME: LAKE
+   Deep lake blue base, silver-blue accents
+   ============================================ */
+body.fbl-skin-lake {
+    /* BRAND COLORS */
+    --fbl-gold:      #b0c4de;
+    --fbl-light:     #e8f4f8;
+    --fbl-dark:      #0f2838;
+    --fbl-mid:       #1a3a4f;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #142e42;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #0f2838;  /* Main page background */
+    --fbl-header-bg:    #0f2838;  /* Header section background */
+    --fbl-bg-alt:       #183448;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #091c28;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #122f42;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #091c28;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #0f2838;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #e8f4f8;  /* Body text */
+    --fbl-text-heading: #b0c4de;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #b0c4de;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #b0c4de;
+    --fbl-border-light: rgba(176,196,222,0.2);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.4);
+
+    /* FOOTER */
+    --fbl-footer-text:       #b0c4de;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #ffffff;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #b0c4de;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #ffffff;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #d6e8f8;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #b0c4de;
+    --et_color_accent:         #b0c4de;
+    --et_pb_text_color:        #e8f4f8;
+    --et_pb_text_color_light:  #e8f4f8;
+    --et_pb_heading_color:     #b0c4de;
+    --et_pb_background_color:  #0f2838;
+}
+
+/* ============================================
+   THEME: BRAND (Custom — User Defined)
+   Same base as Classic, fully tweakable
+   ============================================ */
+body.fbl-skin-brand {
+    /* BRAND COLORS */
+    --fbl-gold:      #d6c48a;
+    --fbl-light:     #f8f4e8;
+    --fbl-dark:      #111111;
+    --fbl-mid:       #222222;
+    --fbl-white:     #ffffff;
+    --fbl-black:     #000000;
+    --fbl-grey-row:  #2e2e2e;
+
+    /* BACKGROUNDS */
+    --fbl-bg-main:      #111111;  /* Main page background */
+    --fbl-header-bg:    #111111;  /* Header section background */
+    --fbl-bg-alt:       #1c1c1c;  /* Alternate/contrast sections */
+    --fbl-footer-bg:    #0a0a0a;  /* Footer — darker than page */
+    --fbl-sidemenu-bg:  #1a1a1a;  /* Left/right sidebar columns */
+    --fbl-mm-bg:        #0a0a0a;  /* Mobile menu dropdown */
+    --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
+
+    /* UI COMPONENT BACKGROUNDS */
+    --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
+    --fbl-input-text:   #111111;  /* Text inside form inputs */
+    --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
+
+    /* TEXT */
+    --fbl-text-main:    #d6c48a;  /* Body text */
+    --fbl-text-heading: #d6c48a;  /* Heading text */
+
+    /* ACCENTS */
+    --fbl-menu-separator: #d6c48a;  /* Sidebar sub-menu divider line */
+    --fbl-border-color: #d6c48a;
+    --fbl-border-light: rgba(255,255,255,0.12);
+    --fbl-shadow:       0 2px 8px rgba(0,0,0,0.5);
+
+    /* FOOTER */
+    --fbl-footer-text:       #d6c48a;  /* Footer headings + menu links */
+    --fbl-footer-link-hover: #ffffff;  /* Footer link hover */
+
+    /* SIDE MENU */
+    --fbl-sidemenu-link:        #d6c48a;  /* Sidebar menu links */
+    --fbl-sidemenu-link-hover:  #ffffff;  /* Sidebar sub-menu hover */
+    --fbl-sidemenu-link-active: #ffffff;  /* Active/current page item */
+    --fbl-topmenu-hover:        #f0e0b0;  /* Top-level menu item hover */
+
+    /* DIVI TOKEN MAP */
+    --et_color_primary:        #d6c48a;
+    --et_color_accent:         #d6c48a;
+    --et_pb_text_color:        #f8f4e8;
+    --et_pb_text_color_light:  #f8f4e8;
+    --et_pb_heading_color:     #d6c48a;
+    --et_pb_background_color:  #111111;
+}

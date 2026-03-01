@@ -1,0 +1,399 @@
+/*
+=================================================
+07-pages.css
+Page-specific styles organized by page
+Site: fishbucklake.com (staging)
+=================================================
+
+HOW TO USE:
+1. Find your page ID (shown in URL when editing page: post=XXX)
+2. Add styles using: body.page-id-XXX selector
+3. Keep each page's styles in its own section
+4. Add comments to document what each style does
+
+EXAMPLE:
+body.page-id-33 .custom-element {
+  background: var(--fbl-bg-alt);
+}
+*/
+
+/* =========================================================
+   TEMPLATE PAGE (Example - Remove when done)
+   Page ID: Check your URL when editing
+   ========================================================= */
+/*
+body.page-id-XXX .example-class {
+  color: var(--fbl-text-heading);
+  background: var(--fbl-bg-alt);
+  padding: var(--fbl-space-md);
+}
+*/
+
+/* =========================================================
+   LODGES OVERVIEW
+   Page ID: 33
+   ========================================================= */
+body.page-id-33 {
+  /* Add lodge-specific styles here */
+}
+
+/* =========================================================
+   OUTPOSTS OVERVIEW
+   Page ID: 31
+   ========================================================= */
+body.page-id-31 {
+  /* Add outpost-specific styles here */
+}
+
+/* =========================================================
+   RATES PAGE
+   Page ID: 36
+   ========================================================= */
+body.page-id-36 {
+  /* Add pricing table styles here */
+}
+
+/* Example pricing table structure:
+body.page-id-36 .pricing-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--fbl-space-md);
+}
+
+body.page-id-36 .pricing-card {
+  background: var(--fbl-bg-alt);
+  padding: var(--fbl-space-lg);
+  border-radius: var(--fbl-radius);
+  border: 1px solid var(--fbl-border-light);
+}
+*/
+
+/* =========================================================
+   GALLERY / FLICKR PAGE
+   Page ID: 52
+   ========================================================= */
+body.page-id-52 {
+  /* Add gallery-specific styles here */
+}
+
+/* Example gallery grid:
+body.page-id-52 .gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--fbl-space-sm);
+}
+
+body.page-id-52 .gallery-item img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--fbl-radius);
+  transition: transform 0.3s ease;
+}
+
+body.page-id-52 .gallery-item img:hover {
+  transform: scale(1.05);
+}
+*/
+
+/* =========================================================
+   CONTACT US PAGE
+   Page ID: 24
+   ========================================================= */
+body.page-id-24 {
+  /* Add contact form styles here */
+}
+
+/* Example contact form styling:
+body.page-id-24 .contact-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+body.page-id-24 .form-field {
+  margin-bottom: var(--fbl-space-md);
+}
+
+body.page-id-24 input,
+body.page-id-24 textarea {
+  background: var(--fbl-bg-alt);
+  color: var(--fbl-text-main);
+  border: 1px solid var(--fbl-border-light);
+  padding: var(--fbl-space-sm);
+  width: 100%;
+}
+*/
+
+/* =========================================================
+   LOCATION PAGE
+   Page ID: 45
+   ========================================================= */
+body.page-id-45 {
+  /* Add map/location styles here */
+}
+
+/* =========================================================
+   HUNTING PAGE
+   Page ID: 56
+   ========================================================= */
+body.page-id-56 {
+  /* Add hunting-specific styles here */
+}
+
+/* =========================================================
+   YOUR HOSTS PAGE
+   Page ID: 26
+   ========================================================= */
+body.page-id-26 {
+  /* Add host bio styles here */
+}
+
+/* Example bio layout:
+body.page-id-26 .host-bio {
+  display: flex;
+  gap: var(--fbl-space-lg);
+  margin-bottom: var(--fbl-space-xl);
+}
+
+body.page-id-26 .host-photo {
+  flex: 0 0 200px;
+  border-radius: var(--fbl-radius);
+}
+
+body.page-id-26 .host-info {
+  flex: 1;
+}
+*/
+
+/* =========================================================
+   TESTIMONIALS PAGE
+   Page ID: 20
+   ========================================================= */
+body.page-id-20 {
+  /* Add testimonial styles here */
+}
+
+/* Example testimonial cards:
+body.page-id-20 .testimonial {
+  background: var(--fbl-bg-alt);
+  padding: var(--fbl-space-lg);
+  margin-bottom: var(--fbl-space-md);
+  border-left: 3px solid var(--fbl-gold);
+  border-radius: var(--fbl-radius);
+}
+
+body.page-id-20 .testimonial-author {
+  color: var(--fbl-text-heading);
+  font-weight: 600;
+  margin-top: var(--fbl-space-sm);
+}
+*/
+
+/* =========================================================
+   BINGWOOD CABINS PAGE
+   Page ID: 60
+   ========================================================= */
+body.page-id-60 {
+  /* Add Bingwood-specific styles here */
+}
+
+/* =========================================================
+   BUCK CABIN PAGE
+   Page ID: 44
+   ========================================================= */
+body.page-id-44 {
+  /* Add Buck-specific styles here */
+}
+
+/* =========================================================
+   BAYFIELD LAKE OUTPOST
+   Page ID: 57
+   ========================================================= */
+body.page-id-57 {
+  /* Add Bayfield-specific styles here */
+}
+
+/* =========================================================
+   WHITE OWL LAKE OUTPOST
+   Page ID: 55
+   ========================================================= */
+body.page-id-55 {
+  /* Add White Owl-specific styles here */
+}
+
+/* =========================================================
+   GOURLAY LAKE OUTPOST
+   Page ID: 58
+   ========================================================= */
+body.page-id-58 {
+  /* Add Gourlay-specific styles here */
+}
+
+/* =========================================================
+   BUFFALO ISLAND LAKE OUTPOST
+   Page ID: 47
+   ========================================================= */
+body.page-id-47 {
+  /* Add Buffalo Island-specific styles here */
+}
+
+/* =========================================================
+   TRADE SHOWS 2025
+   Page ID: 59
+   ========================================================= */
+body.page-id-59 {
+  /* Add trade show styles here */
+}
+
+/* Example event list:
+body.page-id-59 .event-list {
+  list-style: none;
+  padding: 0;
+}
+
+body.page-id-59 .event-item {
+  background: var(--fbl-bg-alt);
+  padding: var(--fbl-space-md);
+  margin-bottom: var(--fbl-space-sm);
+  border-radius: var(--fbl-radius);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+body.page-id-59 .event-date {
+  color: var(--fbl-text-heading);
+  font-weight: 600;
+}
+*/
+
+/* =========================================================
+   SHARED PAGE COMPONENTS
+   Styles used across multiple pages
+   ========================================================= */
+
+/* Custom content boxes used on multiple pages */
+.fbl-info-box {
+  background: var(--fbl-bg-alt);
+  padding: var(--fbl-space-lg);
+  margin-bottom: var(--fbl-space-md);
+  border-radius: var(--fbl-radius);
+  border-left: 3px solid var(--fbl-gold);
+}
+
+.fbl-info-box h3 {
+  color: var(--fbl-text-heading);
+  margin-top: 0;
+}
+
+/* Highlight boxes for important information */
+.fbl-highlight {
+  background: rgba(214, 196, 138, 0.1); /* Gold tint */
+  border: 1px solid var(--fbl-gold);
+  padding: var(--fbl-space-md);
+  border-radius: var(--fbl-radius);
+  margin: var(--fbl-space-md) 0;
+}
+
+/* Image galleries used on multiple pages */
+.fbl-image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--fbl-space-md);
+  margin: var(--fbl-space-lg) 0;
+}
+
+.fbl-image-gallery img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: var(--fbl-radius);
+  transition: transform 0.3s ease;
+}
+
+.fbl-image-gallery img:hover {
+  transform: scale(1.05);
+  box-shadow: var(--fbl-shadow);
+}
+
+/* Feature lists used on accommodation pages */
+.fbl-feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.fbl-feature-list li {
+  padding: var(--fbl-space-xs) 0;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.fbl-feature-list li::before {
+  content: "✓";
+  color: var(--fbl-gold);
+  position: absolute;
+  left: 0;
+  font-weight: bold;
+}
+
+/* Call-to-action buttons used across pages */
+.fbl-cta-button {
+  display: inline-block;
+  background: var(--fbl-gold);
+  color: var(--fbl-dark);
+  padding: var(--fbl-space-sm) var(--fbl-space-lg);
+  border-radius: var(--fbl-radius);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.fbl-cta-button:hover {
+  background: var(--fbl-white);
+  color: var(--fbl-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--fbl-shadow);
+}
+
+/* Mobile responsive adjustments for page components */
+@media (max-width: 980px) {
+  .fbl-image-gallery {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--fbl-space-sm);
+  }
+  
+  .fbl-image-gallery img {
+    height: 150px;
+  }
+  
+  .fbl-info-box {
+    padding: var(--fbl-space-md);
+  }
+}
+
+/* =========================================================
+   TIPS FOR ADDING NEW PAGE STYLES
+   ========================================================= 
+   
+1. Find your page ID:
+   - Edit the page in WordPress
+   - Look at the URL: post=XXX (XXX is your page ID)
+
+2. Add a new section:
+   - Copy the template at the top
+   - Replace XXX with your actual page ID
+   - Add your custom styles
+
+3. Use design tokens:
+   - Colors: var(--fbl-gold), var(--fbl-light), etc.
+   - Spacing: var(--fbl-space-sm), var(--fbl-space-md), etc.
+   - Keep consistency with the rest of the site
+
+4. Mobile responsive:
+   - Add @media (max-width: 980px) blocks as needed
+   - Test on mobile view
+
+5. Reusable components:
+   - If a style is used on 2+ pages, add it to "SHARED PAGE COMPONENTS"
+   - Use class names starting with .fbl-
+
+*/

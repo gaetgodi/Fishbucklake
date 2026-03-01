@@ -1,0 +1,651 @@
+/*
+=================================================
+01-global.css
+Global styles, body, and Divi theme integration
+Site: fishbucklake.com (staging)
+=================================================
+
+SECTION INDEX:
+  1. SKIN BASE STYLES
+  2. LAYOUT & SPACING FIXES
+  3. STICKY HEADER FIX
+  4. MOBILE ADJUSTMENTS
+  5. BACKGROUND ZONE OVERRIDES
+  6. LINKS & GLOBAL COLORS
+  7. SIDE MENU OVERRIDES
+  8. FOOTER OVERRIDES
+  9. IMAGE STYLING
+ 10. REUSABLE COMPONENTS — Rates/Packages
+ 11. LIST STYLES
+ 12. PACKING LIST COMPONENT
+ 13. CONTACT PAGE
+=================================================
+*/
+
+/* =========================================================
+   1. SKIN BASE STYLES
+   ========================================================= */
+
+body.fbl-skin-classic,
+body.fbl-skin-light,
+body.fbl-skin-medium,
+body.fbl-skin-forest,
+body.fbl-skin-sunset,
+body.fbl-skin-lake,
+body.fbl-skin-brand {
+    background-color: var(--fbl-bg-main);
+    color: var(--fbl-text-main);
+    font-family: var(--fbl-font-body);
+}
+
+body.fbl-skin-classic #page-container,
+body.fbl-skin-light #page-container,
+body.fbl-skin-medium #page-container,
+body.fbl-skin-forest #page-container,
+body.fbl-skin-sunset #page-container,
+body.fbl-skin-lake #page-container,
+body.fbl-skin-brand #page-container {
+    background: var(--fbl-bg-main);
+}
+
+/* =========================================================
+   2. LAYOUT & SPACING FIXES
+   ========================================================= */
+
+/* Desktop: Keep space for admin bar when logged in */
+html {
+    margin-top: 20px !important;
+}
+
+/* Mobile: Remove all top space */
+@media (max-width: 980px) {
+    html {
+        margin-top: 0 !important;
+    }
+    #wpadminbar {
+        display: none !important;
+    }
+}
+
+body {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* =========================================================
+   3. STICKY HEADER FIX
+   ========================================================= */
+
+/* Remove position:relative from content elements to prevent stacking contexts */
+/* Excludes Divi Visual Builder elements and .fbl-side-menu columns (needed for sticky) */
+body:not(.et-fb) #page-container .et_pb_section:not(#fbl-sticky-header-group),
+body:not(.et-fb) #page-container .et_pb_row,
+body:not(.et-fb) #page-container .et_pb_column:not(.fbl-side-menu),
+body:not(.et-fb) #page-container .et_pb_module,
+body:not(.et-fb) #page-container .et_pb_container {
+    position: static !important;
+}
+
+/* Restore required positioning for Divi sliders */
+.et_pb_slider,
+.et_pb_slides,
+.et_pb_slide {
+    position: relative !important;
+}
+
+/* Breadcrumb row clickable above transparent header */
+body:not(.et-fb) .fbl-breadcrumb-wrapper {
+    position: relative;
+    z-index: 10002 !important;
+    pointer-events: auto !important;
+}
+
+/* Content links clickable above sticky header */
+body:not(.et-fb) #main-content {
+    position: relative;
+    z-index: 10002 !important;
+}
+
+/* Header stays on top visually but allows clicks through */
+body:not(.et-fb) #fbl-sticky-header-group {
+    pointer-events: none !important;
+}
+
+/* Header background — token-controlled */
+#fbl-sticky-header-group {
+    background-color: var(--fbl-header-bg) !important;
+}
+
+/* Alt section background — token-controlled */
+#fbl-members-of {
+    background-color: var(--fbl-bg-alt) !important;
+}
+
+/* Keep header links clickable */
+body:not(.et-fb) #fbl-sticky-header-group a,
+body:not(.et-fb) #fbl-sticky-header-group button {
+    pointer-events: auto !important;
+}
+
+/* =========================================================
+   4. MOBILE ADJUSTMENTS
+   ========================================================= */
+
+@media (max-width: 980px) {
+    #main-content {
+        padding-bottom: 160px !important;
+    }
+
+    .et_pb_section {
+        margin-bottom: 0 !important;
+    }
+
+    .et_pb_section_0_tb_header,
+    #fbl-sticky-header-group {
+        margin-bottom: 0 !important;
+    }
+
+    #main-content .et_pb_section:last-child {
+        margin-bottom: 160px !important;
+    }
+
+    /* Force show all header rows */
+    .et_pb_row_1_tb_header {
+        display: flex !important;
+    }
+    .et_pb_row_3_tb_header {
+        display: flex !important;
+    }
+
+    /* Hide first and last columns in row with fbl-right-heading */
+    .et_pb_row:has(#fbl-right-heading) > .et_pb_column:first-child,
+    .et_pb_row:has(#fbl-right-heading) > .et_pb_column:last-child {
+        display: none;
+    }
+}
+
+/* =========================================================
+   5. BACKGROUND ZONE OVERRIDES
+   Each zone has its own token — independently skin-responsive.
+   These overrides beat Divi's static rendered background values.
+   ========================================================= */
+
+/* Main content row */
+#fbl-nav-content-row {
+    background-color: var(--fbl-bg-main) !important;
+}
+
+/* Centre content column */
+#fbl-middle-intro {
+    background-color: var(--fbl-content-bg) !important;
+    padding: 1.5rem;
+    min-height: 200px;
+    margin-left: 0.75rem !important;
+    margin-right: 0.75rem !important;
+}
+
+/* Sidebar columns */
+.fbl-side-menu {
+    background-color: var(--fbl-sidemenu-bg) !important;
+}
+
+/* Footer section */
+.fbl-footer {
+    background-color: var(--fbl-footer-bg) !important;
+}
+
+/* Footer rows — transparent so section background shows through */
+.fbl-footer .et_pb_row {
+    background-color: transparent !important;
+}
+
+/* Copyright row */
+.fbl-copyright-row {
+    background-color: var(--fbl-content-bg) !important;
+}
+
+/* =========================================================
+   6. LINKS & GLOBAL COLORS
+   ========================================================= */
+
+/* Default, visited, active — no state change */
+a,
+a:visited,
+a:active {
+    color: inherit !important;
+    text-decoration: none !important;
+}
+
+/* Hover — clear interactive feedback */
+a:hover {
+    color: var(--fbl-white) !important;
+    text-decoration: underline !important;
+}
+
+.fbl-link {
+    color: var(--fbl-link);
+}
+
+/* Dropdown menu link hover */
+.et_pb_menu_0.et_pb_menu .nav li ul.sub-menu a:hover,
+.et_pb_menu_1.et_pb_menu .nav li ul.sub-menu a:hover {
+    color: var(--fbl-white) !important;
+}
+
+/* =========================================================
+   7. SIDE MENU OVERRIDES
+   Scoped to .fbl-side-menu to avoid affecting other menus.
+   ========================================================= */
+
+/* Heading */
+.fbl-side-menu.et_pb_heading h2 {
+    color: var(--fbl-sidemenu-link) !important;
+}
+
+/* Top level menu items */
+.fbl-side-menu .et-menu > li > a,
+.fbl-footer .fbl-menu-footer .et-menu > li > a {
+    color: var(--fbl-sidemenu-link) !important;
+}
+.fbl-side-menu .et-menu > li > a:hover,
+.fbl-footer .fbl-menu-footer .et-menu > li > a:hover {
+    color: var(--fbl-topmenu-hover) !important;
+}
+
+/* Sub-menu items */
+.fbl-side-menu .et-menu .sub-menu a,
+.fbl-footer .fbl-menu-footer .et-menu .sub-menu a {
+    color: var(--fbl-sidemenu-link) !important;
+}
+.fbl-side-menu .et-menu .sub-menu a:hover,
+.fbl-footer .fbl-menu-footer .et-menu .sub-menu a:hover {
+    color: var(--fbl-sidemenu-link-hover) !important;
+}
+
+/* Content inside centre column — token-driven cascade */
+#fbl-middle-intro {
+    color: var(--fbl-text-main);
+}
+
+#fbl-middle-intro * {
+    color: inherit;
+}
+
+#fbl-middle-intro .et_pb_module {
+    color: var(--fbl-text-main);
+}
+
+#fbl-middle-intro h1,
+#fbl-middle-intro h2,
+#fbl-middle-intro h3 {
+    color: var(--fbl-text-heading) !important;
+}
+
+/* =========================================================
+   8. FOOTER OVERRIDES
+   Scoped to .fbl-footer and .fbl-copyright-row.
+   ========================================================= */
+
+/* H4 column heading titles */
+.fbl-footer .et_pb_heading h4 {
+    color: var(--fbl-footer-text) !important;
+}
+
+/* Menu link colors — desktop */
+.fbl-footer .fbl-menu-footer .et-menu a,
+.fbl-footer .fbl-menu-footer .et-menu a:visited {
+    color: var(--fbl-footer-text) !important;
+}
+.fbl-footer .fbl-menu-footer .et-menu a:hover {
+    color: var(--fbl-footer-link-hover) !important;
+}
+
+/* Menu link colors — mobile */
+.fbl-footer .fbl-menu-footer .et_mobile_menu a {
+    color: var(--fbl-footer-text) !important;
+}
+
+/* Copyright row text */
+.fbl-copyright-row .et_pb_text_inner,
+.fbl-copyright-row .et_pb_text_inner a,
+.fbl-copyright-row .et_pb_text_inner p {
+    color: var(--fbl-footer-text) !important;
+}
+.fbl-copyright-row .et_pb_text_inner a:hover {
+    color: var(--fbl-footer-link-hover) !important;
+}
+
+/* =========================================================
+   9. IMAGE STYLING
+   ========================================================= */
+
+.et_pb_text img {
+    border-radius: var(--fbl-radius-lg) !important;
+    border: 1px solid var(--fbl-black) !important;
+}
+
+img {
+    border-radius: var(--fbl-radius-lg) !important;
+}
+
+.et_pb_text img.no-border {
+    border: none !important;
+}
+
+/* =========================================================
+   10. REUSABLE COMPONENTS — Rates/Packages
+   ========================================================= */
+
+.background-box {
+    border: 3px solid var(--fbl-box-border);
+    border-radius: 8px;
+    background-color: var(--fbl-tan-box);
+    color: var(--fbl-rates-text);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.background-box h2,
+.background-box .et_pb_text h2 {
+    font-size: 1.5rem !important;
+    color: var(--fbl-bright-gold) !important;
+    text-decoration: underline;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.background-box h3,
+.background-box .et_pb_text h3 {
+    font-size: 1.2rem !important;
+    font-weight: bold !important;
+    color: var(--fbl-bright-gold) !important;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.background-box ul {
+    padding-left: 1.5rem;
+}
+
+.package-rates {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--fbl-rates-text);
+    text-align: center;
+    margin: 0.5rem 0;
+}
+
+.grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+    .grid-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+.rates h1 {
+    font-size: 2rem;
+    text-align: center;
+    color: var(--fbl-gold);
+    margin-bottom: 1.5rem;
+}
+
+.rates p {
+    font-size: 1rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.rates hr {
+    border: none;
+    border-top: 2px solid var(--fbl-border-light);
+    margin: 3rem 0;
+}
+
+/* =========================================================
+   11. LIST STYLES
+   ========================================================= */
+
+.list-arrow {
+    list-style: none !important;
+    list-style-type: none !important;
+    padding-left: 0 !important;
+}
+
+.list-arrow li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+    list-style: none !important;
+    list-style-type: none !important;
+}
+
+.list-arrow.arrow-green li:before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--fbl-green-arrow);
+    font-size: 1.2rem;
+}
+
+ul.list-arrow li::marker,
+ul.arrow-green li::marker {
+    content: "" !important;
+    display: none !important;
+}
+
+/* =========================================================
+   12. PACKING LIST COMPONENT
+   ========================================================= */
+
+.packing-list {
+    color: var(--fbl-gold);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.packing-list h2 {
+    color: var(--fbl-gold);
+    text-align: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.packing-list h3 {
+    color: var(--fbl-gold);
+    font-size: 1.3rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.packing-list > p {
+    color: var(--fbl-gold);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.packing-tips {
+    list-style: none !important;
+    padding-left: 0;
+    margin-bottom: 2rem;
+}
+
+.packing-tips li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    line-height: 1;
+    color: var(--fbl-gold);
+}
+
+.packing-tips li:before {
+    position: absolute;
+    left: 0;
+    font-size: 1.2rem;
+    color: var(--fbl-gold);
+}
+
+.packing-list .consider-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2rem !important;
+    margin-top: 1.5rem;
+    width: 100% !important;
+}
+
+.packing-list .consider-column {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+.packing-list .consider-column li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.75rem;
+    line-height: 1;
+    color: var(--fbl-gold);
+    list-style: none !important;
+}
+
+.packing-list .consider-column li:before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--fbl-green-arrow);
+    font-size: 1.2rem;
+}
+
+@media (max-width: 980px) {
+    .packing-list .consider-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .packing-list .consider-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+}
+
+/* =========================================================
+   13. CONTACT PAGE
+   ========================================================= */
+
+.et_pb_row .et_pb_row_nested.gli-center-row-content {
+    justify-content: center !important;
+    display: flex !important;
+}
+
+.et_pb_row .et_pb_row_nested.gli-center-row-content > .et_pb_column {
+    flex: 0 1 auto !important;
+    max-width: 45% !important;
+}
+
+@media (max-width: 767px) {
+    .et_pb_row .et_pb_row_nested.gli-center-row-content {
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    .et_pb_row .et_pb_row_nested.gli-center-row-content > .et_pb_column {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+
+    .et_pb_row .et_pb_row_nested.gli-center-row-content > .et_pb_column:last-child {
+        margin-bottom: 0 !important;
+    }
+}
+
+/* =========================================================
+   SOCIAL MEDIA ICONS — FLICKR FIX
+   ========================================================= */
+
+.et_pb_social_media_follow_network_2_tb_header.fbl-social-flickr a.icon,
+.et_pb_social_media_follow_network_2_tb_header.et-social-flikr a.icon,
+.fbl-social-flickr a.icon,
+.et-social-flikr a.icon {
+    --dot-size: 16px;
+    --margin: 4px;
+    --blue-dot: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="%230063DC"/></svg>');
+    --pink-dot: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="%23FF0084"/></svg>');
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: calc(3 * var(--dot-size) + 2 * var(--margin)) !important;
+    height: calc(3 * var(--dot-size) + 2 * var(--margin)) !important;
+    border-radius: 50% !important;
+    position: relative !important;
+    font-size: 0 !important;
+}
+
+.fbl-social-flickr a.icon::before,
+.et-social-flikr a.icon::before {
+    content: "" !important;
+    display: block !important;
+    width: var(--dot-size) !important;
+    height: var(--dot-size) !important;
+    background-image: var(--blue-dot) !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    position: absolute !important;
+    left: var(--margin) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+.fbl-social-flickr a.icon::after,
+.et-social-flikr a.icon::after {
+    content: "" !important;
+    display: block !important;
+    width: var(--dot-size) !important;
+    height: var(--dot-size) !important;
+    background-image: var(--pink-dot) !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    position: absolute !important;
+    left: calc(var(--margin) + var(--dot-size) + var(--dot-size) + 10px) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+.et_pb_social_media_follow {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.et_pb_social_media_follow li,
+.et_pb_social_media_follow_network {
+    display: inline-flex !important;
+    align-items: center !important;
+    vertical-align: middle !important;
+}
+
+.et_pb_social_media_follow a.icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#fbl-members-of {
+    border-radius: var(--fbl-radius) !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+}

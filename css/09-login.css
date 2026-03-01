@@ -1,0 +1,244 @@
+/*
+=================================================
+login.css
+Login page styles using FBL design tokens
+Site: fishbucklake.com (staging)
+Permissions: 644
+=================================================
+*/
+
+/* =========================================================
+   CENTERING — force Divi 5 text module to full width
+   so the login box can center within the column
+   ========================================================= */
+
+#fbl-middle-intro .et_pb_text,
+#fbl-middle-intro .et_pb_module {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+#fbl-middle-intro .et_pb_text_inner {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+#fbl-middle-intro .fbl-login-box {
+    width: 420px !important;
+    max-width: 90% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* =========================================================
+   LOGIN BOX CONTAINER
+   Uses sidemenu-bg — slightly lighter than bg-main on all
+   dark skins, giving the box visual lift and contrast for
+   the text inside. Stays fully token-driven across all skins.
+   ========================================================= */
+
+.fbl-login-box {
+    background: var(--fbl-sidemenu-bg);
+    border: 2px solid var(--fbl-border-color);
+    border-radius: var(--fbl-radius-lg);
+    padding: 2.5rem;
+    width: 420px;
+    max-width: 100%;
+    margin: 3rem auto;
+    box-shadow: var(--fbl-shadow);
+    display: block;
+}
+
+/* =========================================================
+   LOGGED-IN STATE
+   ========================================================= */
+
+.fbl-already-logged-in {
+    text-align: center;
+}
+
+.fbl-already-logged-in p,
+.fbl-already-logged-in .fbl-welcome-text,
+.fbl-already-logged-in strong {
+    color: var(--fbl-text-main) !important;
+    margin-bottom: 1rem;
+}
+
+/* =========================================================
+   FORM LABELS — gold to match headings across the site
+   ========================================================= */
+
+.fbl-login-box label {
+    color: var(--fbl-gold);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    display: block;
+    margin-bottom: 0.4rem;
+    margin-top: 1rem;
+}
+
+/* =========================================================
+   INPUT FIELDS
+   input-bg gives inputs visual contrast from the box
+   input-text ensures readable text in all skins
+   ========================================================= */
+
+.fbl-login-box input[type="text"],
+.fbl-login-box input[type="password"],
+.fbl-login-box input[type="email"] {
+    background: var(--fbl-input-bg);
+    border: 1px solid var(--fbl-border-color);
+    color: var(--fbl-input-text);
+    padding: 0.75rem;
+    border-radius: var(--fbl-radius);
+    width: 100%;
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+.fbl-login-box input[type="text"]:focus,
+.fbl-login-box input[type="password"]:focus,
+.fbl-login-box input[type="email"]:focus {
+    border-color: var(--fbl-gold);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--fbl-border-light);
+}
+
+/* =========================================================
+   REMEMBER ME CHECKBOX
+   ========================================================= */
+
+.fbl-login-box .login-remember {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    color: var(--fbl-text-main);
+    font-size: var(--fbl-font-sm);
+}
+
+.fbl-login-box .login-remember input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.fbl-login-box input[type="submit"],
+.fbl-login-btn {
+    display: block;
+    width: 100%;
+    background: var(--fbl-gold);
+    color: var(--fbl-dark) !important;
+    border: none;
+    padding: 0.85rem 2rem;
+    border-radius: var(--fbl-radius);
+    cursor: pointer;
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none !important;
+    margin-top: 1.5rem;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fbl-login-box input[type="submit"]:hover,
+.fbl-login-btn:hover {
+    background: var(--fbl-topmenu-hover) !important;
+    color: var(--fbl-dark) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--fbl-shadow);
+    text-decoration: none !important;
+}
+
+/* =========================================================
+   REGISTER & LOST PASSWORD LINKS
+   ========================================================= */
+
+.fbl-login-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--fbl-border-light);
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fbl-login-links a {
+    color: var(--fbl-gold) !important;
+    font-size: var(--fbl-font-sm);
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+.fbl-login-links a:hover {
+    color: var(--fbl-topmenu-hover) !important;
+    text-decoration: underline !important;
+}
+
+/* =========================================================
+   ERROR & SUCCESS MESSAGES
+   ========================================================= */
+
+.fbl-login-error {
+    background: rgba(255, 68, 68, 0.15);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    padding: 0.85rem 1rem;
+    border-radius: var(--fbl-radius);
+    margin-bottom: 1.25rem;
+    font-size: var(--fbl-font-sm);
+}
+
+.fbl-login-success {
+    background: rgba(68, 170, 68, 0.15);
+    border: 1px solid #44aa44;
+    color: #44aa44;
+    padding: 0.85rem 1rem;
+    border-radius: var(--fbl-radius);
+    margin-bottom: 1.25rem;
+    font-size: var(--fbl-font-sm);
+}
+
+/* =========================================================
+   WORDPRESS LOGIN FORM OVERRIDES
+   ========================================================= */
+
+#fbl-login-form p {
+    margin-bottom: 0;
+}
+
+#fbl-login-form .login-username,
+#fbl-login-form .login-password {
+    margin-bottom: 0.25rem;
+}
+
+#fbl-login-form .login-submit {
+    margin-top: 0;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 480px) {
+    .fbl-login-box {
+        padding: 1.5rem;
+        margin: 1.5rem auto;
+        width: 90% !important;
+    }
+
+    .fbl-login-links {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

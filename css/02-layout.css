@@ -1,0 +1,512 @@
+/*
+=================================================
+02-layout.css
+Column structure, responsive behavior, and page layout
+Site: fishbucklake.com (staging)
+=================================================
+*/
+
+/* =========================================================
+   COLUMN BEHAVIOR – PREVENT RAVELING ON DESKTOP
+   ========================================================= */
+
+/* Hide content briefly on all screens to prevent initial render flash */
+.et_builder_inner_content {
+  opacity: 0;
+  animation: fadeInContent 0.2s ease-in 0.1s forwards;
+}
+
+@keyframes fadeInContent {
+  to { opacity: 1; }
+}
+
+@media (min-width: 981px) {
+  .fbl-side-menu-column {
+    flex: 0 0 18% !important;
+    max-width: 18% !important;
+  }
+
+  .fbl-center-column {
+    flex: 1 1 auto !important;
+    max-width: 64% !important;
+  }
+  
+  .fbl-footer-menu {  
+    flex: 0 0 18% !important;
+    width: 100%;
+    max-width: 18% !important;
+  }
+}
+/* Constrain overall site width */
+#page-container,
+.et-l,
+#et-main-area {
+    max-width: var(--fbl-site-max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+/* =========================================================
+   MOBILE BEHAVIOR – HIDE SIDE COLUMNS
+   ========================================================= */
+
+@media (max-width: 980px) {
+  .fbl-side-menu {
+    display: none !important;
+  }
+  
+  /* Hide Divi's mobile menu elements everywhere on mobile */
+  .et_mobile_nav_menu,
+  .mobile_nav,
+  .mobile_menu_bar {
+    display: none !important;
+  }
+  
+  /* Also hide any menu modules in the footer row on mobile */
+  .fbl-menu-footer {
+    display: none !important;
+  }
+
+  /* Reserve space for mobile drawer buttons */
+  body.fbl-skin-classic {
+    padding-bottom: 160px;
+  }
+}
+
+/* =========================================================
+   DIVI 5 FIX — NEUTRALIZE MENU-SPECIFIC COLUMN BEHAVIOR
+   ========================================================= */
+
+/* Stop menu columns from forcing equal-height / stretch */
+#fbl-nav-content-row .et_pb_column--with-menu {
+  align-self: flex-start !important;
+}
+
+/* Ensure heading + menu stack naturally */
+#fbl-left-heading,
+#fbl-right-heading {
+  margin-bottom: 0.6rem;
+}
+
+/* Prevent flex stretch causing tall columns */
+.et_pb_row_2 .et_pb_column {
+  align-self: flex-start !important;
+}
+
+/* =========================================================
+   FBL MOBILE LAYOUT — STICKY HEADER GROUP
+   ========================================================= */
+
+@media (max-width: 980px) {
+  /* Ensure the nav/content row keeps its structure */
+  #fbl-nav-content-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  /* Force middle column to remain visible */
+  #fbl-nav-content-row #fbl-middle-intro,
+  #fbl-nav-content-row .et_pb_column_2,
+  div#fbl-middle-intro.et_pb_column,
+  .et_pb_column#fbl-middle-intro {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 0 !important;
+    background: var(--fbl-content-bg) !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+  
+  /* Override Divi's .et_pb_column_empty class */
+  .et_pb_column_empty#fbl-middle-intro,
+  #fbl-nav-content-row .et_pb_column_empty#fbl-middle-intro {
+    display: block !important;
+  }
+  
+  /* Force modules inside middle column to be visible */
+  #fbl-middle-intro .et_pb_module,
+  .fbl-center-column .et_pb_module {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* Prevent content from collapsing upward */
+  #fbl-nav-content-row > * {
+    position: relative !important;
+  }
+  
+  /* Show desktop menu for Footer Legal in sticky header */
+  #fbl-sticky-header-group .et_pb_menu__menu {
+    display: block !important;
+  }
+  
+  /* Hide mobile hamburger for this menu */
+  #fbl-sticky-header-group .et_mobile_nav_menu {
+    display: none !important;
+  }
+  
+  /* Force header heading modules to show on mobile */
+  .et_pb_row_1_tb_header .et_pb_heading {
+    display: block !important;
+  }
+}
+
+/* =========================================================
+   MOBILE DRAWER — DIVI 5 STACKING CONTEXT FIX
+   ========================================================= */
+
+@media (max-width: 980px) {
+  /* Allow fixed elements to escape Divi container */
+  body,
+  html {
+    overflow-x: visible !important;
+  }
+
+  #page-container {
+    overflow: visible !important;
+    transform: none !important;
+  }
+}
+
+/* =========================================================
+   SLIDER POSITIONING FIX
+   ========================================================= */
+
+/* Fix slider positioning */
+.et_pb_slider,
+.fbl-slider {
+    position: relative !important;
+}
+
+/* Position arrows DIRECTLY on slider, bypassing container */
+.et_pb_slider .et-pb-arrow-prev,
+.et_pb_slider .et-pb-arrow-next {
+    position: absolute !important;
+    top: 200px !important;
+    z-index: 100 !important;
+}
+
+.et_pb_slider .et-pb-arrow-prev {
+    left: 10px !important;
+}
+
+.et_pb_slider .et-pb-arrow-next {
+    right: 10px !important;
+}
+
+/* =========================================================
+   GLOBAL STYLES
+   ========================================================= */
+
+body {
+  background-color: var(--fbl-bg-main);
+}
+
+/* =========================================================
+   DIVI 5 FIX - Column Class flex-basis
+   Force columns to respect their Column Class proportions
+   ========================================================= */
+
+body:not(.et-fb) .et_flex_column_5_24 {
+    flex-basis: calc(20.8333% - var(--horizontal-gap-parent, 5.5%) * 0.79167) !important;
+}
+
+body:not(.et-fb) .et_flex_column_14_24 {
+    flex-basis: calc(58.3333% - var(--horizontal-gap-parent, 5.5%) * 0.41667) !important;
+}
+
+/* =========================================================
+   TABLET/INTERMEDIATE VIEWPORT - HEADER ALIGNMENT
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  /* Stack header row vertically and center */
+  .et_pb_row_1_tb_header,
+  #fbl-sticky-header-group .et_pb_row_1_tb_header {
+    flex-direction: column !important;
+    align-items: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Center all columns */
+  .et_pb_row_1_tb_header .et_pb_column,
+  #fbl-sticky-header-group .et_pb_row_1_tb_header .et_pb_column {
+    width: 100% !important;
+    max-width: 100% !important;
+    text-align: center !important;
+  }
+  
+  /* Center heading text */
+  .et_pb_row_1_tb_header .et_pb_heading,
+  #fbl-sticky-header-group .et_pb_row_1_tb_header .et_pb_heading {
+    text-align: center !important;
+  }
+  
+  /* Center logo image */
+  .et_pb_row_1_tb_header img,
+  #fbl-sticky-header-group .et_pb_row_1_tb_header img {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: block !important;
+  }
+}
+
+/* =========================================================
+   MAIN CONTENT ROW - FIX 5-14-5 LAYOUT AT TABLET BREAKPOINT
+   ========================================================= */
+
+@media (min-width: 981px) and (max-width: 1100px) {
+    /* Main content row with side menus */
+    body .et_pb_row_0:not(.et_pb_row_0_tb_header):not(.et_pb_row_0_tb_footer) {
+        justify-content: space-between !important;
+    }
+    
+    /* Left column - 5/24 */
+    body .et_pb_column_0:not(.et_pb_column_0_tb_header):not(.et_pb_column_0_tb_footer) {
+        flex-basis: 20.83% !important;
+        max-width: 20.83% !important;
+    }
+    
+    /* Middle column - 14/24 */
+    body .et_pb_column_1:not(.et_pb_column_1_tb_header):not(.et_pb_column_1_tb_footer) {
+        flex-basis: 58.33% !important;
+        max-width: 58.33% !important;
+    }
+    
+    /* Right column - 5/24 */
+    body .et_pb_column_2:not(.et_pb_column_2_tb_header):not(.et_pb_column_2_tb_footer) {
+        flex-basis: 20.83% !important;
+        max-width: 20.83% !important;
+    }
+}
+/* How to Find Us - Maple Leaf Images Equal Sizing */
+/* Add class 'gli-maple-leaf-row' to that specific row in Divi */
+
+.et_pb_row .et_pb_row_nested.gli-maple-leaf-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important; /* Prevent wrapping */
+}
+
+.et_pb_row .et_pb_row_nested.gli-maple-leaf-row .et_pb_column {
+    flex: 0 0 auto !important;
+    width: auto !important;
+}
+
+.et_pb_row .et_pb_row_nested.gli-maple-leaf-row .et_pb_image img {
+    width: 120px !important;
+    height: auto !important;
+    max-width: 120px !important;
+}
+
+@media (max-width: 980px) {
+    .et_pb_row .et_pb_row_nested.gli-maple-leaf-row .et_pb_image img {
+        width: 80px !important;
+        max-width: 80px !important;
+    }
+}
+
+/* Extra small phones - scale down further if needed */
+@media (max-width: 480px) {
+    .et_pb_row .et_pb_row_nested.gli-maple-leaf-row .et_pb_image img {
+        width: 60px !important;
+        max-width: 60px !important;
+    }
+}
+/* Contact page - Center row content */
+.et_pb_row .et_pb_row_nested.gli-center-row-content {
+  justify-content: center !important;
+  display: flex !important;
+}
+
+.et_pb_row .et_pb_row_nested.gli-center-row-content > .et_pb_column {
+  flex: 0 1 auto !important;
+  max-width: 45% !important;
+}
+@media (max-width: 768px) {
+    .et_pb_row .et_pb_row_nested .et_pb_image img {
+        width: 60px !important;
+        max-width: 60px !important;
+    }
+}
+/* Front page - three image row */
+:root {
+    --fbl-hero-image-size: 200px;
+}
+
+#FBL-3-images {
+    justify-content: center !important;
+    gap: 1% !important;
+    align-items: center !important;
+}
+
+#FBL-3-images .et_pb_column {
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: var(--fbl-hero-image-size) !important;
+    width: var(--fbl-hero-image-size) !important;
+    min-width: var(--fbl-hero-image-size) !important;
+    max-width: var(--fbl-hero-image-size) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#FBL-3-images .et_pb_image {
+    width: var(--fbl-hero-image-size) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#FBL-3-images .et_pb_image img {
+    width: var(--fbl-hero-image-size) !important;
+    height: auto !important;
+    display: block !important;
+    margin: 0 auto !important;
+}
+
+/* Stack on tablet and mobile */
+@media (max-width: 980px) {
+    #FBL-3-images {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 20px !important;
+    }
+    
+    #FBL-3-images .et_pb_column {
+        width: 100% !important;
+        max-width: 300px !important;
+        min-width: 0 !important;
+        flex-basis: auto !important;
+    }
+    
+    #FBL-3-images .et_pb_image {
+        width: 100% !important;
+    }
+    
+    #FBL-3-images .et_pb_image img {
+        width: 100% !important;
+        max-width: 300px !important;
+    }
+}
+/* Override Divi's inline CSS hiding heading on phone */
+@media only screen and (max-width: 767px) {
+  #Fbl-findus-head {
+    display: block !important;
+  }
+}
+/* =====================================================
+   RESPONSIVE CONTENT IMAGES - FLEX LAYOUT
+   ===================================================== */
+
+/* Force paragraph containing both image classes to flex */
+p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+/* Desktop and tablet: side by side */
+@media (min-width: 768px) {
+  p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) {
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 20px !important;
+  }
+  
+  p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) a {
+    flex: 1 1 45% !important;
+    max-width: 48% !important;
+    min-width: 200px !important;
+    display: block !important;
+  }
+  
+  p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) img {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+  }
+  
+  /* Single images - float normally */
+  .fbl-content-image-float-right {
+    float: right !important;
+    margin: 2px 10px 2px 20px !important;
+  }
+  
+  .fbl-content-image-float-left {
+    float: left !important;
+    margin: 2px 20px 2px 10px !important;
+  }
+}
+
+/* Phone: stack and center */
+@media (max-width: 980px) {
+  p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 20px !important;
+  }
+  
+  p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) a {
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+  
+  p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) img {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+  
+  /* Single images - center at natural width */
+  .fbl-content-image-float-right,
+  .fbl-content-image-float-left {
+    float: none !important;
+    display: block !important;
+    margin: 20px auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+  
+  a:has(.fbl-content-image-float-right),
+  a:has(.fbl-content-image-float-left) {
+    display: block !important;
+    text-align: center !important;
+  }
+}
+/* Treat divs with float classes like images */
+div.fbl-content-image-float-left,
+div.fbl-content-image-float-right {
+  display: inline-block;
+}
+/* Outpost buttons and map layout */
+.fbl-outpost-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important; /* Reduced from 20px to 10px */
+  align-items: flex-start !important;
+  justify-content: center !important;
+}
+
+.fbl-outpost-buttons {
+  display: inline-block !important;
+  flex: 0 1 280px !important;
+  max-width: 280px !important;
+  line-height: 0 !important;
+}
+
+.fbl-outpost-map {
+  flex: 0 1 408px !important;
+  max-width: 408px !important;
+  height: auto !important;
+}

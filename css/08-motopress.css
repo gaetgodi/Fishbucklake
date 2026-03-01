@@ -1,0 +1,97 @@
+/* =========================================================
+   MOTOPRESS HOTEL BOOKING STYLES
+   ========================================================= */
+
+/* Use existing FBL design tokens for consistency */
+.mphb_sc_checkout-wrapper {
+    background: var(--fbl-bg-alt);
+    border-color: var(--fbl-gold);
+}
+
+/* Ensure all MotoPress content stays within column */
+.mphb_sc_room-wrapper,
+.mphb-single-room-type-wrapper {
+    max-width: 100%;
+    overflow: visible;
+}
+
+/* Fix MotoPress calendar width - force it to fit column */
+.mphb-calendar,
+.mphb-calendar-wrapper {
+    max-width: 100%;
+    overflow: visible;
+}
+
+.mphb-calendar.mphb-datepick {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+}
+
+/* Make calendar table responsive */
+.mphb-calendar table {
+    width: 100% !important;
+    table-layout: auto;
+}
+
+/* Fix calendar cells */
+.mphb-calendar td,
+.mphb-calendar th {
+    padding: 5px;
+    font-size: 0.9em;
+}
+
+/* Fix datepicker popup z-index - must be higher than main-content */
+.datepick-popup {
+    z-index: 99999 !important;
+    position: absolute !important;
+}
+
+/* Reduce main-content z-index so it doesn't cover popups */
+#main-content {
+    z-index: 1 !important;
+}
+
+/* Reduce Divi row z-index */
+.et_pb_row_0_tb_body {
+    z-index: 1 !important;
+}
+
+/* Reduce section z-index */
+.et_pb_section {
+    z-index: 1 !important;
+}
+
+/* Ensure footer doesn't cover datepicker */
+#main-footer {
+    z-index: 1 !important;
+}
+
+/* Keep column structure but allow popups */
+#left-area,
+.et_pb_column {
+    position: relative;
+    z-index: 1;
+}
+
+/* =========================================================
+   MOTOPRESS GALLERY — Detail Page
+   Images are stored as plain <p><img></p> in Divi post content
+   ========================================================= */
+
+/* Center single accommodation image on detail page */
+.single-mphb_room_type .et_pb_post_content p img,
+.single-mphb_room_type .entry-content p img {
+    display: block;
+    margin: 0 auto 1rem;
+    height: auto;
+}
+
+.single-mphb_room_type .et_pb_post_content p:has(img),
+.single-mphb_room_type .entry-content p:has(img) {
+    text-align: center;
+}
+/* Hide category line on single accommodation pages */
+li.mphb-room-type-categories {
+    display: none;
+}

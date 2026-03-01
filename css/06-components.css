@@ -1,0 +1,267 @@
+/*
+=================================================
+06-components.css
+Reusable components: breadcrumbs, gallery, slider, text blocks
+Site: fishbucklake.com (staging)
+=================================================
+*/
+
+/* =========================================================
+   BREADCRUMBS WITH UNDERLINE THAT MATCHES TEXT WIDTH
+   ========================================================= */
+.fbl-breadcrumb-content-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0; /* Ensure no extra margin */
+}
+
+.fbl-breadcrumb-content {
+  white-space: nowrap;
+  font-size: .9rem;
+  color: var(--fbl-text-heading);
+  margin: 0; /* Ensure no extra margin */
+}
+
+.fbl-breadcrumb-line {
+  height: 2px;
+  width: 100%;
+  background: var(--fbl-border-color);
+  margin-top: -.2rem;
+  margin-bottom: 0; /* Explicitly set to 0 */
+  min-width: 60px;
+}
+
+.fbl-breadcrumb-inner { 
+  display: inline-block;
+  margin: 0; /* Ensure no extra margin */
+}
+
+.fbl-breadcrumb-row, 
+.fbl-breadcrumb-wrapper {
+  display: inline-block !important;
+  width: auto !important;
+  margin: 0 !important; /* Ensure no extra margin */
+}
+
+/* =========================================================
+   FBL GALLERY GRID
+   ========================================================= */
+.fbl-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.fbl-gallery-item {
+  overflow: hidden;
+  position: relative;
+}
+
+.fbl-gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s ease;
+}
+
+.fbl-gallery-item:hover img {
+  transform: scale(1.05);
+}
+
+/* =========================================================
+   FBL SLIDER
+   ========================================================= */
+.fbl-slider { 
+  position: relative;
+  margin: 30px 0;
+  overflow: hidden;
+}
+
+.fbl-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.fbl-slide.is-active {
+  opacity: 1;
+  position: relative;
+}
+
+.fbl-slide img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.fbl-prev, .fbl-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,.4);
+  color: var(--fbl-white);
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.fbl-prev:hover, .fbl-next:hover {
+  background: rgba(0,0,0,.7);
+}
+
+.fbl-prev { left: 10px; }
+.fbl-next { right: 10px; }
+
+/* =========================================================
+   THREE-IMAGE STRIP
+   ========================================================= */
+.fbl-image-strip {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  max-width: 100%;
+  width: 100%;
+}
+
+.fbl-image-strip img {
+  max-width: 150px;
+  border-radius: var(--fbl-radius-lg);
+}
+
+@media (max-width: 767px) {
+  .fbl-image-strip {
+    flex-direction: column;
+    gap: .8rem;
+  }
+  .fbl-image-strip img {
+    max-width: 120px;
+  }
+}
+
+/* =========================================================
+   INTRO TEXT BLOCK (TITLE / BODY / BOTTOM LINE)
+   ========================================================= */
+.fbl-text-block {
+  line-height: var(--fbl-line-height);
+  color: var(--fbl-text-heading);
+  text-align: center;
+}
+
+.fbl-text-block * {
+  color: inherit !important;
+}
+.fbl-text-block ul,
+.fbl-text-block ol {
+  text-align: left;
+}
+.fbl-text-image {
+  float: right;
+  max-width: 300px;
+  margin: 0 0 1rem 1rem;
+  border-radius: var(--fbl-radius-lg);
+}
+
+@media (max-width: 767px) {
+  .fbl-text-image {
+    float: none;
+    max-width: 100%;
+    margin: 0 0 1rem;
+  }
+}
+
+.fbl-text-title {
+  font-weight: 700;
+  font-size: var(--fbl-title-size);
+  text-decoration: underline;
+  margin-bottom: 1.2rem;
+}
+
+.fbl-text-body {
+  font-size: var(--fbl-body-size);
+  margin-bottom: 1.2rem;
+}
+
+.fbl-text-bottom {
+  font-weight: 700;
+  font-size: var(--fbl-bottom-size);
+  margin-top: 1.4rem;
+}
+
+@media (max-width: 767px) {
+  .fbl-text-title {
+    font-size: calc(var(--fbl-title-size) * 0.87);
+  }
+  .fbl-text-body {
+    font-size: calc(var(--fbl-body-size) * 0.91);
+  }
+  .fbl-text-bottom {
+    font-size: calc(var(--fbl-bottom-size) * 0.90);
+  }
+}
+
+/* =========================================================
+   SOCIAL ICONS - CIRCULAR STYLE
+   ========================================================= */
+/* Make social icons circular */
+#fbl-social-section .et_pb_social_icon,
+#fbl-social-section .et_pb_social_media_follow li a {
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Ensure icon stays centered in circle */
+#fbl-social-section .et_pb_social_icon i,
+#fbl-social-section .et_pb_social_media_follow li a i {
+  font-size: 20px !important;
+}
+
+/* Optional: Add subtle hover effect */
+#fbl-social-section .et_pb_social_icon:hover,
+#fbl-social-section .et_pb_social_media_follow li a:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 980px) {
+  #fbl-social-section .et_pb_social_icon,
+  #fbl-social-section .et_pb_social_media_follow li a {
+    width: 30px !important; /* Reduced from 32px */
+    height: 30px !important;
+  }
+  
+  #fbl-social-section .et_pb_social_icon i,
+  #fbl-social-section .et_pb_social_media_follow li a i {
+    font-size: 15px !important; /* Reduced from 16px */
+  }
+}
+.fbl-text-block p a {
+  color: var(--fbl-gold) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+.fbl-text-block p a:hover {
+  color: var(--fbl-white) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+
+}
+.rates {
+  color: var(--fbl-text-main) ;
+}
+
+.rates * {
+  color: var(--fbl-text-main) !important;
+}
+.fbl-outpost-intro {
+  color: var(--fbl-text-main);
+}

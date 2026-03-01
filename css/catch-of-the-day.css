@@ -1,0 +1,291 @@
+/**
+ * Catch of the Day Modal Styles
+ */
+
+/* Modal container */
+.fbl-catch-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.fbl-catch-modal.fbl-catch-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Overlay */
+.fbl-catch-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+}
+
+/* Content container */
+.fbl-catch-content {
+    position: relative;
+    background: var(--fbl-dark);
+    border: 2px solid var(--fbl-gold);
+    border-radius: var(--fbl-radius-lg);
+    padding: 2rem;
+    max-width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Close button */
+.fbl-catch-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--fbl-gold);
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    z-index: 10;
+}
+
+.fbl-catch-close:hover {
+    color: var(--fbl-white);
+}
+
+/* Title */
+.fbl-catch-title {
+    color: var(--fbl-gold);
+    font-family: var(--fbl-font-heading);
+    font-size: 1.8rem;
+    margin: 0 0 1.5rem 0;
+    text-align: center;
+}
+
+/* Image container */
+.fbl-catch-image-container {
+    margin: 0 0 1rem 0;
+}
+
+.fbl-catch-image {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: var(--fbl-radius);
+}
+
+/* Gallery link */
+.fbl-catch-link {
+    text-align: center;
+    margin: 1rem 0 0 0;
+}
+
+.fbl-catch-link a {
+    color: var(--fbl-gold);
+    text-decoration: none;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+}
+
+.fbl-catch-link a:hover {
+    color: var(--fbl-white);
+    text-decoration: underline;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .fbl-catch-content {
+        padding: 1.5rem;
+        max-width: 95%;
+    }
+    
+    .fbl-catch-title {
+        font-size: 1.5rem;
+        padding-right: 2rem;
+    }
+    
+    .fbl-catch-close {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .fbl-catch-content {
+        padding: 1rem;
+    }
+    
+    .fbl-catch-title {
+        font-size: 1.3rem;
+    }
+}
+
+/* =========================================================
+   CATCH GALLERY PAGE STYLES
+   ========================================================= */
+
+/* Gallery header */
+.fbl-catch-gallery-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--fbl-border-light);
+}
+
+.fbl-catch-gallery-title {
+    color: var(--fbl-gold);
+    font-family: var(--fbl-font-heading);
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.fbl-catch-gallery-subtitle {
+    color: var(--fbl-gold);
+    font-size: 1.1rem;
+    margin: 0;
+    opacity: 0.8;
+}
+
+/* Empty state */
+.fbl-catch-gallery-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--fbl-gold);
+}
+
+/* Gallery grid */
+.fbl-catch-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin: 0 0 3rem 0;
+}
+
+/* Gallery item */
+.fbl-catch-gallery-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--fbl-radius);
+    background: var(--fbl-mid);
+ /*   aspect-ratio: 16 / 9; */
+
+}
+
+.fbl-catch-gallery-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.fbl-catch-gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+ }
+
+.fbl-catch-gallery-link:hover .fbl-catch-gallery-image {
+    transform: scale(1.05);
+}
+
+/* Overlay */
+.fbl-catch-gallery-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.fbl-catch-gallery-link:hover .fbl-catch-gallery-overlay {
+    opacity: 1;
+}
+
+.fbl-catch-gallery-day {
+    color: var(--fbl-gold);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.fbl-catch-gallery-date {
+    color: var(--fbl-white);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+    .fbl-catch-gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    
+    .fbl-catch-gallery-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .fbl-catch-gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .fbl-catch-gallery-title {
+        font-size: 1.75rem;
+    }
+    
+    .fbl-catch-gallery-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+    }
+}
+/* =========================================================
+   FANCYBOX Z-INDEX FIX FOR DIVI 5
+   ========================================================= */
+
+/* Force Fancybox above all Divi elements */
+.fancybox__container {
+    z-index: 9999999 !important;
+}
+
+.fancybox__backdrop {
+    z-index: 9999998 !important;
+}
+
+.fancybox__carousel {
+    z-index: 9999999 !important;
+}
+
+.fancybox__toolbar {
+    z-index: 10000000 !important;
+}
+

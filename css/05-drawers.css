@@ -1,0 +1,467 @@
+/*
+=================================================
+05-drawers.css
+Mobile bottom drawer navigation system
+Site: fishbucklake.com (staging)
+=================================================
+*/
+
+/* =====================================================
+   DESKTOP — DISABLE ALL MOBILE DRAWERS
+   ===================================================== */
+@media (min-width: 981px) {
+  #fbl-mm-drawer,
+  #fbl-mm-bottom-sheet,
+  #fbl-footer-mm-bottom-sheet,
+  #fbl-mm-overlay {
+    display: none !important;
+  }
+  
+  /* Also hide mobile menu content on desktop */
+  .fbl-mobile-menu-wrapper {
+    display: none !important;
+  }
+}
+
+/* =====================================================
+   GLOBAL — HIDE MOBILE MENUS WHEN NOT IN DRAWERS
+   ===================================================== */
+
+/* Hide mobile menu wrappers by default (they appear in page content) */
+.fbl-mobile-menu-wrapper {
+  display: none !important;
+}
+
+/* Only show when inside drawer body - FIRST DRAWER REVERSED */
+#fbl-mm-bottom-sheet .fbl-mm-sheet-body .fbl-mobile-menu-wrapper {
+  display: flex !important;
+  flex-direction: column-reverse !important; /* Change column-reverse to column */
+  gap: 0.6rem;
+}
+
+/* SECOND DRAWER NORMAL ORDER */
+#fbl-footer-mm-bottom-sheet .fbl-mm-sheet-body .fbl-mobile-menu-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.6rem;
+}
+
+/* =====================================================
+   MOBILE — UNIFIED DRAWER SYSTEM
+   ===================================================== */
+
+/* Prevent body scroll when drawer is open */
+html.fbl-mm-open, 
+body.fbl-mm-open,
+html.fbl-footer-mm-open,
+body.fbl-footer-mm-open {
+  overflow: hidden; 
+  touch-action: none; 
+  height: 100%;
+}
+
+/* Ensure space for buttons when drawer is open */
+body.fbl-mm-open,
+body.fbl-footer-mm-open {
+  padding-bottom: 100px !important; /* Reserve button space */
+}
+
+/* Ensure drawer container can escape Divi bounds */
+body {
+  overflow-x: visible !important;
+}
+
+#page-container,
+#main-content,
+.et_pb_section,
+.et_builder_inner_content,
+#et-main-area {
+  overflow: visible !important;
+  transform: none !important;
+}
+
+@media (max-width: 980px) {
+
+  /* ===================================================
+     DRAWER BUTTON CONTAINER
+     =================================================== */
+
+  #fbl-mm-drawer {
+    position: fixed !important;
+    bottom: env(safe-area-inset-bottom, 12px);
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    
+    display: flex !important;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px;
+    
+    padding: 0 20px; /* breathing room on sides */
+    box-sizing: border-box;
+    
+    z-index: 9999999 !important; /* increased z-index */
+    pointer-events: none;
+    
+    /* Force container to be visible */
+    overflow: visible !important;
+    transform: none !important;
+  }
+
+  /* ===================================================
+     DRAWER BUTTONS — UNIFIED STYLING
+     =================================================== */
+
+  #fbl-mm-open,
+  #fbl-footer-mm-open {
+    pointer-events: auto !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    
+    width: auto !important;
+    max-width: 90% !important; /* prevent overflow on very small screens */
+    min-width: 200px !important; /* ensure minimum readable width */
+    padding: 0.55rem 1.1rem !important;
+    
+    background: rgba(0,0,0,.88) !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--fbl-border-color) !important;
+    
+    color: var(--fbl-text-heading) !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    
+    cursor: pointer;
+    
+    /* Ensure text is visible */
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* Button icons - Default hamburger */
+  .fbl-mm-open-icon::before {
+    content: "\61"; /* Hamburger icon */
+    font-family: "ETmodules";
+    font-size: 22px;
+    color: var(--fbl-text-heading);
+  }
+
+  /* Only show X on the ACTIVE button */
+  body.fbl-mm-open #fbl-mm-open .fbl-mm-open-icon::before {
+    content: "\4d"; /* X icon - only on "What We Offer" button when its drawer is open */
+  }
+
+  body.fbl-footer-mm-open #fbl-footer-mm-open .fbl-mm-open-icon::before {
+    content: "\4d"; /* X icon - only on "Additional Details" button when its drawer is open */
+  }
+  
+  /* FORCE inactive buttons to show hamburger */
+  body.fbl-mm-open #fbl-footer-mm-open .fbl-mm-open-icon::before {
+    content: "\61" !important; /* Force hamburger on Additional Details when What We Offer is open */
+  }
+  
+  body.fbl-footer-mm-open #fbl-mm-open .fbl-mm-open-icon::before {
+    content: "\61" !important; /* Force hamburger on What We Offer when Additional Details is open */
+  }
+
+  /* Button labels */
+  .fbl-mm-open-label {
+    display: inline-block;
+    color: inherit;
+    white-space: nowrap;
+    font-weight: inherit;
+  }
+
+  /* ===================================================
+     OVERLAY (SHARED)
+     =================================================== */
+
+  #fbl-mm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 35vh; /* Cover top 35% where page content is */
+    background: rgba(0,0,0,.55); /* Dims top panel */
+    z-index: 99999999 !important; /* Much higher - above all page content but below drawer buttons */
+    display: none;
+    pointer-events: none; /* Allow clicking through to page content */
+  }
+
+  body.fbl-mm-open #fbl-mm-overlay,
+  body.fbl-footer-mm-open #fbl-mm-overlay {
+    display: block;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  /* Ensure page remains scrollable when drawer is open */
+  body.fbl-mm-open,
+  body.fbl-footer-mm-open {
+    overflow-y: scroll !important; /* Force scrollbar */
+    position: static !important;
+    height: auto !important;
+  }
+  
+  /* Make sure page container is scrollable */
+  body.fbl-mm-open #page-container,
+  body.fbl-footer-mm-open #page-container {
+    position: relative !important;
+    z-index: 1 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 150vh !important; /* Ensure content is taller than viewport */
+  }
+  
+  /* Ensure main content area is scrollable */
+  body.fbl-mm-open .et_builder_inner_content,
+  body.fbl-footer-mm-open .et_builder_inner_content {
+    position: relative !important;
+    min-height: 120vh !important; /* Force it to be scrollable */
+  }
+
+  /* ===================================================
+     DRAWER SHEETS (PRIMARY & FOOTER)
+     =================================================== */
+
+  #fbl-mm-bottom-sheet,
+  #fbl-footer-mm-bottom-sheet {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    
+    height: 65vh !important; /* 65% of screen - leaves 35% above */
+    max-height: 65vh !important;
+    overflow-y: auto !important;
+    
+    background: var(--fbl-content-bg) !important;  /* Medium grey — genuine contrast with dark text */
+    border-top: 2px solid var(--fbl-border-color) !important;
+    
+    transform: translateY(100%);
+    transition: transform .25s ease-out;
+    
+    display: none;
+    flex-direction: column;
+    z-index: 99998 !important; /* Below buttons */
+  }
+
+  /* Open states */
+  body.fbl-mm-open #fbl-mm-bottom-sheet {
+    display: flex !important;
+    transform: translateY(0) !important;
+  }
+
+  body.fbl-footer-mm-open #fbl-footer-mm-bottom-sheet {
+    display: flex !important;
+    transform: translateY(0) !important;
+  }
+
+  /* Keep buttons visible when drawers open */
+  body.fbl-mm-open #fbl-mm-drawer,
+  body.fbl-footer-mm-open #fbl-mm-drawer {
+    display: flex !important;
+    z-index: 99999999 !important; /* Extremely high */
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* Ultra-specific: Force main drawer buttons visible */
+  html.fbl-mm-open body.fbl-mm-open #fbl-mm-drawer {
+    display: flex !important;
+    position: fixed !important;
+    bottom: env(safe-area-inset-bottom, 12px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 99999999 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  /* NUCLEAR: Most specific possible - override EVERYTHING */
+  @media (max-width: 980px) {
+    html.fbl-mm-open body.fbl-skin-classic.fbl-mm-open #fbl-mm-drawer {
+      display: flex !important;
+      position: fixed !important;
+      bottom: 12px !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      z-index: 99999999 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  }
+
+  /* Ensure individual buttons stay on top of everything */
+  body.fbl-mm-open #fbl-mm-open,
+  body.fbl-mm-open #fbl-footer-mm-open,
+  body.fbl-footer-mm-open #fbl-mm-open,
+  body.fbl-footer-mm-open #fbl-footer-mm-open {
+    position: relative !important;
+    z-index: 99999999 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    display: flex !important;
+  }
+  
+  /* Debug: Add slight background to buttons when drawer open */
+  body.fbl-mm-open #fbl-mm-open,
+  body.fbl-mm-open #fbl-footer-mm-open {
+    background: rgba(0,0,0,.92) !important; /* Slightly more opaque */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; /* Add shadow */
+  }
+
+  /* ===================================================
+     DRAWER HEADER
+     =================================================== */
+
+  .fbl-mm-sheet-header {
+    padding: .7rem 1rem;
+    border-bottom: 1px solid var(--fbl-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .fbl-mm-sheet-title {
+    font-weight: 600;
+    color: var(--fbl-dark) !important;  /* Dark text on grey background */
+  }
+
+  #fbl-mm-close,
+  #fbl-footer-mm-close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  #fbl-mm-close-icon::before,
+  .fbl-mm-close-icon::before {
+    content: "\4d";
+    font-family: "ETmodules";
+    font-size: 22px;
+    color: var(--fbl-dark) !important;  /* Dark icon on grey background */
+  }
+
+  /* ===================================================
+     DRAWER BODY
+     =================================================== */
+
+  .fbl-mm-sheet-body {
+    padding: 0.5rem; /* Reduced from 0.75rem */
+    padding-bottom: 100px; /* Space for buttons at bottom */
+    overflow-y: auto;
+    flex: 1; /* Allow body to grow and scroll */
+  }
+
+  /* ===================================================
+     DRAWER MENU CONTENT
+     =================================================== */
+
+  .fbl-mm-section {
+    margin-bottom: 0.5rem; /* Reduced from 0.75rem */
+  }
+
+  .fbl-mm-heading {
+    color: var(--fbl-dark) !important;  /* Dark text on grey background */
+    font-size: 1.05rem; /* Slightly smaller from 1.1rem */
+    font-weight: 600;
+    margin-bottom: 0.25rem; /* Reduced from 0.4rem */
+    padding-bottom: 0.2rem; /* Reduced from 0.3rem */
+    border-bottom: 1px solid var(--fbl-border-color);  /* Use full border-color instead of light */
+  }
+
+  .fbl-mm-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .fbl-mm-item {
+    margin-bottom: 0.1rem; /* Reduced from 0.25rem - much tighter! */
+  }
+
+  .fbl-mm-item a {
+    display: block;
+    padding: 1px 0; /* Reduced from 2px */
+    color: var(--fbl-dark) !important;  /* Dark text on grey background */
+    text-decoration: none;
+    line-height: 1.3; /* Tighter from 1.4 */
+  }
+
+  .fbl-mm-item a:hover {
+    color: var(--fbl-dark) !important;
+    opacity: 0.65;
+  }
+
+  /* ===================================================
+     SUB-MENU INDENTATION
+     =================================================== */
+
+  .fbl-mm-list ul.sub-menu {
+    margin-left: 1rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--fbl-border-color);  /* Use full border-color instead of light */
+    margin-top: 0.25rem;
+  }
+
+  .fbl-mm-list ul.sub-menu .fbl-mm-item a {
+    font-size: 0.95em;
+    opacity: 0.85;
+  }
+  
+}
+
+/* ===================================================
+   DISABLE ACTIVITIES LINK IN MOBILE DRAWERS
+   =================================================== */
+
+@media (max-width: 980px) {
+  /* Remove link behavior from Activities menu item */
+  .fbl-mm-item.menu-item-221224 > a {
+    pointer-events: none !important;
+    cursor: default !important;
+    text-decoration: none !important;
+    color: var(--fbl-dark) !important;  /* Match drawer text */
+  }
+}
+
+/* =====================================================
+   PULL FOOTER UP INTO DRAWER BUTTON SPACE (PHONE ONLY)
+   ===================================================== */
+@media (max-width: 980px) {
+  .et_pb_section_0_tb_footer {
+    margin-top: -320px !important;
+  }
+}
+@media (max-width: 980px) {
+  .fbl-mm-item.fbl-restricted {
+    display: none !important;
+  }
+}
+/* ===================================================
+   DRAWER SHEET — CONTRAST FIX
+   content-bg background with dark text (tweaker-safe)
+   =================================================== */
+   @media (max-width: 980px) {
+    #fbl-mm-bottom-sheet,
+    #fbl-footer-mm-bottom-sheet {
+      background: var(--fbl-drawer-bg) !important;
+    }
+  
+    .fbl-mm-sheet-title,
+    #fbl-mm-close-icon::before,
+    .fbl-mm-close-icon::before,
+    .fbl-mm-heading,
+    .fbl-mm-item a,
+    .fbl-mm-item.menu-item-221224 > a {
+      color: var(--fbl-input-text) !important;
+    }
+  }
