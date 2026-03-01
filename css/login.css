@@ -34,13 +34,13 @@ Permissions: 644
 
 /* =========================================================
    LOGIN BOX CONTAINER
-   Uses sidemenu-bg — slightly lighter than bg-main on all
+   Uses fbl-form-bg — midpoint between bg-main and input-bg on all
    dark skins, giving the box visual lift and contrast for
-   the text inside. Stays fully token-driven across all skins.
+   the text inside. Independently tweakable. Stays fully token-driven across all skins.
    ========================================================= */
 
 .fbl-login-box {
-    background: var(--fbl-sidemenu-bg);
+    background: var(--fbl-form-bg);
     border: 2px solid var(--fbl-border-color);
     border-radius: var(--fbl-radius-lg);
     padding: 2.5rem;

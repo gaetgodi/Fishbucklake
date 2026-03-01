@@ -27,7 +27,7 @@ Uses: 00-tokens.css design tokens
 
 /* Form */
 .contact-form {
-    background: var(--fbl-sidemenu-bg);
+    background: var(--fbl-form-bg);
     border: 1px solid var(--fbl-border-light);
     border-left: 4px solid var(--fbl-gold);
     border-radius: var(--fbl-radius-lg);
@@ -292,7 +292,7 @@ DESIGN TOKENS USED:
 Colors:
 - --fbl-gold (labels, borders, button)
 - --fbl-text-main (body text, subtitles)
-- --fbl-sidemenu-bg (form container background)
+- --fbl-form-bg (form container background)
 - --fbl-input-bg (input/select/textarea background)
 - --fbl-input-text (input/select/textarea text + placeholders)
 - --fbl-border-color (input borders)

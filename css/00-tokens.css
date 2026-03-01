@@ -5,7 +5,6 @@ Multi-Theme Design System
 Site: fishbucklake.com (staging)
 =================================================
 */
-/*   */
 
 /* ============================================
    BASE TOKENS (SHARED ACROSS ALL THEMES)
@@ -80,6 +79,7 @@ body.fbl-skin-classic {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #4a4747;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #111111;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
@@ -137,6 +137,7 @@ body.fbl-skin-light {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #ddd8cc;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #2c2416;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
@@ -194,6 +195,7 @@ body.fbl-skin-medium {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #4a5e6e;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #1e3a5f;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
@@ -251,6 +253,7 @@ body.fbl-skin-forest {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #4a5e4a;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #1a3a1a;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
@@ -308,6 +311,7 @@ body.fbl-skin-sunset {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #5e4a42;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #2c1810;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
@@ -365,6 +369,7 @@ body.fbl-skin-lake {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #3e5a6e;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #0f2838;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
@@ -422,6 +427,7 @@ body.fbl-skin-brand {
     --fbl-content-bg:   #716e6e;  /* Centre content column + copyright bar */
 
     /* UI COMPONENT BACKGROUNDS */
+    --fbl-form-bg:      #4a4747;  /* Form/login box container */
     --fbl-input-bg:     #716e6e;  /* Form inputs (contact, login) */
     --fbl-input-text:   #111111;  /* Text inside form inputs */
     --fbl-drawer-bg:    #716e6e;  /* Mobile drawer sheets */
