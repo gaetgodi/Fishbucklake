@@ -446,3 +446,18 @@ body {
     display: none !important;
   }
 }
+
+/* =========================================================
+   MENU VISIBILITY — SHOWS AND EVENTS (MOBILE DRAWERS)
+   Same body classes as desktop, same li# specificity
+   to beat Divi's injected display: block !important
+   ========================================================= */
+
+body.fbl-no-shows li#menu-item-221698,
+body.fbl-no-shows li#menu-item-10557 {
+    display: none !important;
+}
+
+body.fbl-no-events li#menu-item-223594 {
+    display: none !important;
+}
