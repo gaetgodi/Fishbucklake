@@ -50,7 +50,7 @@ Site: fishbucklake.com (staging)
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: var(--fbl-gold);
+    color: #ffea35 !important;
     margin-bottom: 12px;
 }
 
@@ -91,7 +91,7 @@ Site: fishbucklake.com (staging)
     font-family: var(--fbl-font-heading);
     font-size: 1rem;
     font-weight: 700;
-    color: var(--fbl-gold);
+    color: #ffea35 !important;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     margin-bottom: 20px;
@@ -207,8 +207,8 @@ Site: fishbucklake.com (staging)
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: var(--fbl-gold);
-    color: #111111;
+    background: #ffea35 !important;
+    color: #111111 !important;
     font-family: var(--fbl-font-body);
     font-size: 1rem;
     font-weight: 700;
