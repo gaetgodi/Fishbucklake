@@ -184,6 +184,21 @@ add_action('wp_enqueue_scripts', function() {
 }, 20);
 
 /* =========================================================
+   BOOKING INFO PAGE
+   ========================================================= */
+
+add_action('wp_enqueue_scripts', function() {
+    if (is_page('reservations') || is_page('book') || is_page('booking')) {
+        wp_enqueue_style(
+            'fbl-booking',
+            get_stylesheet_directory_uri() . '/css/10-booking.css',
+            array('fbl-pages'),
+            filemtime(get_stylesheet_directory() . '/css/10-booking.css')
+        );
+    }
+}, 20);
+
+/* =========================================================
    CONTACT PAGE
    ========================================================= */
 

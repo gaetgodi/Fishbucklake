@@ -1,0 +1,263 @@
+/*
+=================================================
+10-booking.css
+Pre-booking information page styles
+Site: fishbucklake.com (staging)
+=================================================
+*/
+
+/* =========================================================
+   PAGE WRAPPER — scoped root, no body overrides
+   All styles contained within .fbl-booking-page to avoid
+   conflict with Divi's page styles.
+   ========================================================= */
+
+.fbl-booking-page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+    background: #111111;
+    color: #f8f4e8;
+    font-family: var(--fbl-font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    border-radius: var(--fbl-radius-lg);
+}
+
+.fbl-booking-page h1,
+.fbl-booking-page h2,
+.fbl-booking-page h3,
+.fbl-booking-page p,
+.fbl-booking-page strong {
+    margin: 0;
+    padding: 0;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.fbl-booking-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--fbl-border-color);
+}
+
+.fbl-booking-header .fbl-eyebrow {
+    font-family: var(--fbl-font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--fbl-gold);
+    margin-bottom: 12px;
+}
+
+.fbl-booking-header h1 {
+    font-family: var(--fbl-font-heading);
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    color: #d6b23b !important;
+    line-height: 1.2;
+    margin-bottom: 16px;
+}
+
+.fbl-booking-header .fbl-subtitle {
+    color: #f8f4e8 !important;
+    font-size: 1rem;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   INTRO BOX
+   ========================================================= */
+
+.fbl-intro-box {
+    background: var(--fbl-sidemenu-bg);
+    border: 1px solid rgba(214,196,138,0.2);
+    border-radius: var(--fbl-radius-lg);
+    padding: 28px 32px;
+    margin-bottom: 32px;
+    font-size: 0.95rem;
+    color: #f8f4e8 !important;
+}
+
+/* =========================================================
+   SECTION HEADING
+   ========================================================= */
+
+.fbl-section-heading {
+    font-family: var(--fbl-font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--fbl-gold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.fbl-section-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(214,196,138,0.25);
+}
+
+/* =========================================================
+   POLICY CARDS
+   ========================================================= */
+
+.fbl-policy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.fbl-policy-card {
+    background: var(--fbl-form-bg);
+    border: 1px solid rgba(214,196,138,0.15);
+    border-radius: var(--fbl-radius);
+    padding: 22px 24px;
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.fbl-policy-card:hover {
+    border-color: rgba(214,196,138,0.4);
+    transform: translateY(-2px);
+}
+
+.fbl-policy-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.fbl-policy-body h3 {
+    font-family: var(--fbl-font-heading);
+    font-size: 0.95rem;
+    color: #d6b23b !important;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.fbl-policy-body p {
+    font-size: 0.9rem;
+    color: #f8f4e8 !important;
+    line-height: 1.55;
+}
+
+.fbl-policy-body strong {
+    color: #ffea35 !important;
+    font-weight: 600;
+}
+
+/* =========================================================
+   CTA SECTION
+   ========================================================= */
+
+.fbl-cta-section {
+    text-align: center;
+    padding: 40px 24px;
+    background: var(--fbl-sidemenu-bg);
+    border: 1px solid rgba(214,196,138,0.2);
+    border-radius: var(--fbl-radius-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+.fbl-cta-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,234,53,0.05) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.fbl-cta-section h2 {
+    font-family: var(--fbl-font-heading);
+    font-size: clamp(1.2rem, 3vw, 1.7rem);
+    color: #d6b23b !important;
+    margin-bottom: 10px;
+}
+
+.fbl-cta-section p {
+    font-size: 0.95rem;
+    color: #f8f4e8 !important;
+    opacity: 0.8;
+    margin-bottom: 28px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* =========================================================
+   BOOK NOW BUTTON
+   ========================================================= */
+
+.fbl-book-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--fbl-gold);
+    color: #111111;
+    font-family: var(--fbl-font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 16px 40px;
+    border-radius: var(--fbl-radius);
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 20px rgba(255,234,53,0.25);
+    position: relative;
+}
+
+.fbl-book-btn:hover {
+    background: #fff5a0;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(255,234,53,0.35);
+}
+
+.fbl-book-btn:active {
+    transform: translateY(0);
+}
+
+.fbl-book-btn .fbl-btn-arrow {
+    font-size: 1.1rem;
+    transition: transform 0.2s ease;
+}
+
+.fbl-book-btn:hover .fbl-btn-arrow {
+    transform: translateX(4px);
+}
+
+.fbl-cta-note {
+    margin-top: 16px;
+    font-size: 0.8rem;
+    opacity: 0.55;
+    color: #f8f4e8 !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 600px) {
+    .fbl-booking-page  { padding: 32px 16px 48px; }
+    .fbl-policy-grid   { grid-template-columns: 1fr; }
+    .fbl-intro-box     { padding: 20px; }
+    .fbl-cta-section   { padding: 28px 16px; }
+    .fbl-book-btn      { width: 100%; justify-content: center; }
+}
