@@ -51,14 +51,15 @@ body.page-id-31 {
    ========================================================= */
 body.page-id-36 {
   /* Add pricing table styles here */
-  body.page-id-36 .rates h1,
+}
+
+body.page-id-36 .rates h1,
 body.page-id-36 .rates h2 {
     color: #000000 !important;
 }
 
 body.page-id-36 .rates h3 {
     color: #2a4a00 !important;
-}
 }
 
 /* Example pricing table structure:
