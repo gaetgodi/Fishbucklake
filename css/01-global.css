@@ -649,6 +649,11 @@ ul.arrow-green li::marker {
     overflow: hidden !important;
     padding-bottom: 0 !important;
 }
+#fbl-header-contact,
+#fbl-header-contact p {
+    color: var(--fbl-gold) !important;
+}
+
 #fbl-header-contact a {
     color: var(--fbl-gold) !important;
     text-decoration: none !important;
@@ -656,7 +661,5 @@ ul.arrow-green li::marker {
 
 #fbl-header-contact a:hover {
     color: var(--fbl-white) !important;
-    text-decoration: underline !important;
-}
     text-decoration: underline !important;
 }
