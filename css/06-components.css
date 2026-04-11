@@ -265,3 +265,12 @@ Site: fishbucklake.com (staging)
 .fbl-outpost-intro {
   color: var(--fbl-text-main);
 }
+.fbl-breadcrumb-content a {
+  color: var(--fbl-gold) !important;
+  text-decoration: none !important;
+}
+
+.fbl-breadcrumb-content a:hover {
+  color: var(--fbl-white) !important;
+  text-decoration: underline !important;
+}
