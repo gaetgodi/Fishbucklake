@@ -274,3 +274,6 @@ Site: fishbucklake.com (staging)
   color: var(--fbl-white) !important;
   text-decoration: underline !important;
 }
+.fbl-breadcrumb-content span {
+  color: var(--fbl-gold) !important;
+}
