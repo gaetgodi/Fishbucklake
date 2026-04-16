@@ -130,3 +130,21 @@ function fbl_restrict_menu_items( $items, $args ) {
 
     return $items;
 }
+// Fix jQuery.browser conflict for RezStream calendar
+add_action('wp_head', function() {
+    ?>
+    <script>
+    (function($) {
+        jQuery.browser = {};
+        (function () {
+            jQuery.browser.msie = false;
+            jQuery.browser.version = 0;
+            if (navigator.userAgent.match(/MSIE ([0-9]+)\./)) {
+                jQuery.browser.msie = true;
+                jQuery.browser.version = RegExp.$1;
+            }
+        })();
+    })();
+    </script>
+    <?php
+}, 99);
