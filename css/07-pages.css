@@ -402,3 +402,10 @@ body.page-id-59 .event-date {
    - Use class names starting with .fbl-
 
 */
+/* RezStream calendar — hide form fields below Check-out */
+#rscalendar .rs-sc-nights-wrapper,
+#rscalendar .rs-sc-rooms-wrapper,
+#rscalendar .rs-sc-guest-wrapper,
+#rscalendar .rs-sc-book-button-wrapper {
+    display: none !important;
+}
