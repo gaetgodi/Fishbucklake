@@ -261,3 +261,19 @@ Site: fishbucklake.com (staging)
     .fbl-cta-section   { padding: 28px 16px; }
     .fbl-book-btn      { width: 100%; justify-content: center; }
 }
+#rscalendar {
+    overflow-x: hidden;
+}
+
+#rscalendar .ui-datepicker {
+    width: 100% !important;
+}
+
+#rscalendar .ui-datepicker-group {
+    width: 100% !important;
+    border-right: none !important;
+}
+
+#rscalendar table.ui-datepicker-calendar {
+    width: 100% !important;
+}
