@@ -277,3 +277,8 @@ Site: fishbucklake.com (staging)
 .fbl-breadcrumb-content span {
   color: var(--fbl-gold) !important;
 }
+.fbl-text-block p a:hover {
+  color: var(--fbl-gold-dim) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
