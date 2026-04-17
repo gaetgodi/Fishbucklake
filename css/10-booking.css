@@ -277,3 +277,10 @@ Site: fishbucklake.com (staging)
 #rscalendar table.ui-datepicker-calendar {
     width: 100% !important;
 }
+/* Hide everything below Check-out in RezStream widget */
+#rscalendar .rs-sc-nights-wrapper,
+#rscalendar .rs-sc-rooms-wrapper,
+#rscalendar .rs-sc-guest-wrapper,
+#rscalendar .rs-sc-book-button-wrapper {
+    display: none !important;
+}
