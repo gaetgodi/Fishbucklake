@@ -54,11 +54,11 @@ function fbl_mobile_menu_shortcode() {
 
     $output  = '<div class="fbl-mobile-menu-wrapper">';
     $output .= '<div class="fbl-mm-section">';
-    $output .= '<h3 class="fbl-mm-heading">Your Experience</h3>';
-    $output .= '<ul class="fbl-mm-list">' . fbl_render_menu_tree($left) . '</ul>';
+    $output .= '<h3 class="fbl-mm-heading fbl-mm-toggle">Your Experience <span class="fbl-mm-arrow">&#9658;</span></h3>';
+    $output .= '<ul class="fbl-mm-list fbl-mm-collapsed">' . fbl_render_menu_tree($left) . '</ul>';
     $output .= '</div>';
     $output .= '<div class="fbl-mm-section">';
-    $output .= '<h3 class="fbl-mm-heading">Our Facilities</h3>';
+    $output .= '<h3 class="fbl-mm-heading fbl-mm-toggle fbl-mm-open">Our Facilities <span class="fbl-mm-arrow">&#9660;</span></h3>';
     $output .= '<ul class="fbl-mm-list">' . fbl_render_menu_tree($right) . '</ul>';
     $output .= '</div>';
     $output .= '</div>';
@@ -76,8 +76,8 @@ function fbl_footer_mobile_menu_shortcode() {
         if (!$items) continue;
 
         $output .= '<div class="fbl-mm-section">';
-        $output .= '<h3 class="fbl-mm-heading">' . esc_html($menu_name) . '</h3>';
-        $output .= '<ul class="fbl-mm-list">' . fbl_render_menu_tree($items) . '</ul>';
+        $output .= '<h3 class="fbl-mm-heading fbl-mm-toggle">' . esc_html($menu_name) . ' <span class="fbl-mm-arrow">&#9658;</span></h3>';
+        $output .= '<ul class="fbl-mm-list fbl-mm-collapsed">' . fbl_render_menu_tree($items) . '</ul>';
         $output .= '</div>';
     }
 

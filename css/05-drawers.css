@@ -204,6 +204,26 @@ Site: fishbucklake.com (staging)
     .fbl-mm-item.fbl-restricted {
         display: none !important;
     }
+
+    /* Collapsible sections */
+.fbl-mm-toggle {
+    cursor: pointer !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    user-select: none !important;
+}
+
+.fbl-mm-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+    color: var(--fbl-border-color);
+    flex-shrink: 0;
+}
+
+.fbl-mm-collapsed {
+    display: none !important;
+}
 }
 
 /* =====================================================
