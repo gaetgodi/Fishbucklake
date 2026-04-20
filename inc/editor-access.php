@@ -9,6 +9,9 @@ add_action('init', function() {
     if ($editor) {
         $editor->add_cap('customize');
         $editor->add_cap('edit_theme_options');
+        // Divi Visual Builder access — page editing only, no library
+        $editor->add_cap('et_pb_use_builder');
+        $editor->add_cap('et_pb_use_visual_builder');
     }
 });
 
