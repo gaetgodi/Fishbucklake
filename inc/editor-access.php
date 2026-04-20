@@ -12,6 +12,9 @@ add_action('init', function() {
         // Divi Visual Builder access — page editing only, no library
         $editor->add_cap('et_pb_use_builder');
         $editor->add_cap('et_pb_use_visual_builder');
+        $editor->add_cap('edit_published_pages');
+        $editor->add_cap('edit_others_pages');
+        $editor->add_cap('publish_pages');
     }
 });
 
