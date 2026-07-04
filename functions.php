@@ -20,3 +20,4 @@ require_once get_stylesheet_directory() . '/inc/catch-of-day.php';
 require_once get_stylesheet_directory() . '/inc/breadcrumbs.php';
 require_once get_stylesheet_directory() . '/inc/misc.php';
 require_once get_stylesheet_directory() . '/inc/shortcodes.php';
+require_once get_stylesheet_directory() . '/inc/gallery.php';

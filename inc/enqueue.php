@@ -252,7 +252,10 @@ add_action('wp_enqueue_scripts', function() {
     global $post;
 
     $needs_fancybox = is_page_template('page-catch-gallery.php') ||
-                      (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'catch_gallery'));
+                      (is_a($post, 'WP_Post') && (
+                          has_shortcode($post->post_content, 'catch_gallery') ||
+                          has_shortcode($post->post_content, 'fbl_gallery')
+                      ));
 
     if ($needs_fancybox) {
         wp_enqueue_script(
@@ -273,3 +276,28 @@ add_action('wp_enqueue_scripts', function() {
         wp_add_inline_script('fancybox', 'document.addEventListener("DOMContentLoaded", function() { Fancybox.bind("[data-fancybox]", {}); });');
     }
 });
+/* =========================================================
+   FBL GALLERY - SCRIPTS & STYLES
+   ========================================================= */
+
+add_action('wp_enqueue_scripts', function() {
+    if (function_exists('et_fb_is_enabled') && et_fb_is_enabled()) return;
+
+    global $post;
+    if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'fbl_gallery')) return;
+
+    wp_enqueue_style(
+        'fbl-gallery',
+        get_stylesheet_directory_uri() . '/css/gallery.css',
+        array('fbl-components'),
+        filemtime(get_stylesheet_directory() . '/css/gallery.css')
+    );
+
+    wp_enqueue_script(
+        'fbl-gallery',
+        get_stylesheet_directory_uri() . '/js/gallery.js',
+        array(),
+        filemtime(get_stylesheet_directory() . '/js/gallery.js'),
+        true
+    );
+}, 20);
