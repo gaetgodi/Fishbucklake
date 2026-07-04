@@ -124,6 +124,7 @@ add_shortcode('fbl_gallery', function($atts) {
         'shuffle'  => 'pageload',
         'autoplay' => 5000,
         'link'     => 'lightbox',
+        'caption'  => 'caption',
     ), $atts, 'fbl_gallery');
 
     $folder = trim($atts['folder']);
@@ -159,6 +160,7 @@ add_shortcode('fbl_gallery', function($atts) {
     $lightbox  = ($atts['link'] === 'lightbox');
     $group     = 'fbl-' . sanitize_title($folder);
     $autoplay  = max(1000, (int) $atts['autoplay']);
+    $cap_mode  = in_array($atts['caption'], array('caption', 'title', 'none'), true) ? $atts['caption'] : 'caption';
 
     ob_start();
     ?>
@@ -174,8 +176,13 @@ add_shortcode('fbl_gallery', function($atts) {
             ));
             if (!$full || !$thumb) continue;
 
-            $caption = wp_get_attachment_caption($id);
-            if (!$caption) $caption = get_the_title($id);
+            $caption = '';
+            if ($cap_mode === 'caption') {
+                $caption = wp_get_attachment_caption($id);
+            } elseif ($cap_mode === 'title') {
+                $caption = wp_get_attachment_caption($id);
+                if (!$caption) $caption = get_the_title($id);
+            }
         ?>
             <div class="fbl-gallery-item<?php echo ($view === 'carousel' && $i === 0) ? ' is-active' : ''; ?>">
                 <?php if ($lightbox): ?>

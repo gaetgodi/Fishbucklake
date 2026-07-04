@@ -150,6 +150,16 @@ function fbl_gallery_builder_page() {
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row"><label for="fblgb-caption">Lightbox caption</label></th>
+                    <td>
+                        <select id="fblgb-caption">
+                            <option value="caption">caption — only if Caption field is filled (default)</option>
+                            <option value="title">title — fall back to Title/filename</option>
+                            <option value="none">none — never show captions</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row"><label for="fblgb-link">Click behavior</label></th>
                     <td>
                         <select id="fblgb-link">
@@ -184,6 +194,7 @@ function fbl_gallery_builder_page() {
                 shuffle:  document.getElementById('fblgb-shuffle'),
                 autoplay: document.getElementById('fblgb-autoplay'),
                 link:     document.getElementById('fblgb-link'),
+                caption:  document.getElementById('fblgb-caption'),
                 output:   document.getElementById('fblgb-output'),
                 copyBtn:  document.getElementById('fblgb-copy'),
                 copied:   document.getElementById('fblgb-copied')
@@ -229,10 +240,14 @@ function fbl_gallery_builder_page() {
 
                 if (els.link.value !== 'lightbox') parts.push('link="' + els.link.value + '"');
 
+                if (els.link.value === 'lightbox' && els.caption.value !== 'caption') {
+                    parts.push('caption="' + els.caption.value + '"');
+                }
+
                 els.output.textContent = parts.join(' ') + ']';
             }
 
-            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle', 'autoplay', 'link'].forEach(function(key) {
+            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle', 'autoplay', 'link', 'caption'].forEach(function(key) {
                 els[key].addEventListener('change', build);
                 els[key].addEventListener('input', build);
             });
