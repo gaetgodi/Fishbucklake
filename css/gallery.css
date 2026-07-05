@@ -101,6 +101,16 @@
     border-radius: 0;
 }
 
+.fbl-gallery--fit-contain.fbl-gallery--carousel .fbl-gallery-image {
+    object-fit: contain;
+    background: var(--fbl-color-surface-dark, #1a1a1a);
+}
+
+.fbl-gallery--fit-contain.fbl-gallery--grid .fbl-gallery-image {
+    object-fit: contain;
+    background: var(--fbl-color-surface-dark, #1a1a1a);
+}
+
 @keyframes fbl-gallery-fade {
     from { opacity: 0; }
     to   { opacity: 1; }

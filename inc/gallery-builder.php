@@ -423,6 +423,16 @@ function fbl_gallery_builder_page() {
                         </select>
                     </td>
                 </tr>
+                <tr class="fblgb-row-fit">
+                    <th scope="row"><label for="fblgb-fit">Image fit</label></th>
+                    <td>
+                        <select id="fblgb-fit">
+                            <option value="cover">cover - fill the frame, crop overflow (default)</option>
+                            <option value="contain">contain - full image, letterbox if needed</option>
+                        </select>
+                        <p class="description">Carousel and grid. Masonry always shows full images.</p>
+                    </td>
+                </tr>
                 <tr>
                     <th scope="row"><label for="fblgb-link">Click behavior</label></th>
                     <td>
@@ -490,6 +500,7 @@ function fbl_gallery_builder_page() {
                 autoplay: document.getElementById('fblgb-autoplay'),
                 caption:  document.getElementById('fblgb-caption'),
                 tcaption: document.getElementById('fblgb-tcaption'),
+                fit:      document.getElementById('fblgb-fit'),
                 link:     document.getElementById('fblgb-link'),
                 output:   document.getElementById('fblgb-output'),
                 copyBtn:  document.getElementById('fblgb-copy'),
@@ -550,6 +561,10 @@ function fbl_gallery_builder_page() {
 
                 if (els.tcaption.value !== 'none') {
                     parts.push('thumb_caption="' + els.tcaption.value + '"');
+                }
+
+                if (els.fit.value !== 'cover' && els.view.value !== 'masonry') {
+                    parts.push('fit="' + els.fit.value + '"');
                 }
 
                 els.output.textContent = parts.join(' ') + ']';
@@ -706,7 +721,7 @@ function fbl_gallery_builder_page() {
             }
 
             ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle',
-             'autoplay', 'caption', 'tcaption', 'link'].forEach(function(key) {
+            'autoplay', 'caption', 'tcaption', 'fit', 'link'].forEach(function(key) {
                 els[key].addEventListener('change', build);
                 els[key].addEventListener('input', build);
             });

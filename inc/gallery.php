@@ -129,6 +129,7 @@ add_shortcode('fbl_gallery', function($atts) {
         'autoplay' => 5000,
         'link'     => 'lightbox',
         'caption'  => 'caption',
+        'fit'      => 'cover',
         'thumb_caption' => 'none',
     ), $atts, 'fbl_gallery');
 
@@ -167,10 +168,11 @@ add_shortcode('fbl_gallery', function($atts) {
     $autoplay  = max(1000, (int) $atts['autoplay']);
     $cap_mode  = in_array($atts['caption'], array('caption', 'title', 'none'), true) ? $atts['caption'] : 'caption';
     $tcap_mode = in_array($atts['thumb_caption'], array('none', 'caption', 'title'), true) ? $atts['thumb_caption'] : 'none';
+    $fit       = ($atts['fit'] === 'contain') ? 'contain' : 'cover';
 
     ob_start();
     ?>
-    <div class="fbl-gallery fbl-gallery--<?php echo esc_attr($view); ?>"
+    <div class="fbl-gallery fbl-gallery--<?php echo esc_attr($view); ?> fbl-gallery--fit-<?php echo esc_attr($fit); ?>"
          style="--fbl-gallery-columns: <?php echo esc_attr($columns); ?>;"
          <?php if ($view === 'carousel'): ?>data-fbl-autoplay="<?php echo esc_attr($autoplay); ?>"<?php endif; ?>>
 
