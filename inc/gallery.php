@@ -3,7 +3,7 @@
    FBL GALLERY - FileBird folder-driven gallery
    [fbl_gallery folder="Cabins" view="grid|carousel|masonry"
                 columns="3" limit="0" size="large"
-                order="date_desc|date_asc|name|filebird|random"
+                order="date_desc|date_asc|name|name_desc|random"
                 shuffle="pageload|daily|weekly|never"
                 autoplay="5000" link="lightbox|none"]
    ========================================================= */
@@ -92,18 +92,6 @@ function fbl_gallery_order_ids($ids, $order, $shuffle, $folder_name) {
                 break;
         }
         return $ids;
-    }
-
-    if ($order === 'filebird') {
-        // Honor FileBird Pro manual drag order when present
-        $ordered = get_posts(array(
-            'post_type'      => 'attachment',
-            'post__in'       => $ids,
-            'posts_per_page' => -1,
-            'orderby'        => 'menu_order ID',
-            'order'          => 'ASC',
-        ));
-        return wp_list_pluck($ordered, 'ID');
     }
 
     // date/name orders need post data

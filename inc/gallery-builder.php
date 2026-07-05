@@ -379,9 +379,8 @@ function fbl_gallery_builder_page() {
                         <select id="fblgb-order">
                             <option value="date_desc">date_desc - newest first (default)</option>
                             <option value="date_asc">date_asc - oldest first</option>
-                            <option value="name">name - alphabetical</option>
-                            <option value="name_desc">name_desc - reverse alphabetical</option>
-                            <option value="filebird">filebird - FileBird order</option>
+                            <option value="name">name - by Title label, A-Z</option>
+                            <option value="name_desc">name_desc - by Title label, Z-A</option>
                             <option value="random">random</option>
                         </select>
                     </td>
