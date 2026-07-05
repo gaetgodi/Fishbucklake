@@ -95,16 +95,32 @@ function fbl_gallery_order_ids($ids, $order, $shuffle, $folder_name) {
     }
 
     if ($order === 'filebird') {
-        return $ids; // FileBird join order as-is
+        // Honor FileBird Pro manual drag order when present
+        $ordered = get_posts(array(
+            'post_type'      => 'attachment',
+            'post__in'       => $ids,
+            'posts_per_page' => -1,
+            'orderby'        => 'menu_order ID',
+            'order'          => 'ASC',
+        ));
+        return wp_list_pluck($ordered, 'ID');
     }
 
     // date/name orders need post data
+    $map = array(
+        'date_desc' => array('date', 'DESC'),
+        'date_asc'  => array('date', 'ASC'),
+        'name'      => array('title', 'ASC'),
+        'name_desc' => array('title', 'DESC'),
+    );
+    $ob = isset($map[$order]) ? $map[$order] : $map['date_desc'];
+
     $posts = get_posts(array(
         'post_type'      => 'attachment',
         'post__in'       => $ids,
         'posts_per_page' => -1,
-        'orderby'        => ($order === 'name') ? 'title' : 'date',
-        'order'          => ($order === 'date_asc') ? 'ASC' : (($order === 'name') ? 'ASC' : 'DESC'),
+        'orderby'        => $ob[0],
+        'order'          => $ob[1],
     ));
 
     return wp_list_pluck($posts, 'ID');
@@ -212,8 +228,8 @@ add_shortcode('fbl_gallery', function($atts) {
         <?php endforeach; ?>
 
         <?php if ($view === 'carousel' && count($ids) > 1): ?>
-            <button type="button" class="fbl-gallery-prev" aria-label="Previous image">&#10094;</button>
-            <button type="button" class="fbl-gallery-next" aria-label="Next image">&#10095;</button>
+            <button type="button" class="fbl-gallery-prev" aria-label="Previous image"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+            <button type="button" class="fbl-gallery-next" aria-label="Next image"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
         <?php endif; ?>
     </div>
     <?php

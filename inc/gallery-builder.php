@@ -380,6 +380,7 @@ function fbl_gallery_builder_page() {
                             <option value="date_desc">date_desc - newest first (default)</option>
                             <option value="date_asc">date_asc - oldest first</option>
                             <option value="name">name - alphabetical</option>
+                            <option value="name_desc">name_desc - reverse alphabetical</option>
                             <option value="filebird">filebird - FileBird order</option>
                             <option value="random">random</option>
                         </select>
