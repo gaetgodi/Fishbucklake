@@ -140,7 +140,19 @@
 .fbl-gallery-next:hover {
     background: var(--fbl-color-primary, rgba(0, 0, 0, 0.75));
 }
+/* Contain mode: dark matte needs light controls */
+.fbl-gallery--fit-contain .fbl-gallery-prev,
+.fbl-gallery--fit-contain .fbl-gallery-next {
+    background: rgba(255, 255, 255, 0.85);
+    color: #1a1a1a;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
 
+.fbl-gallery--fit-contain .fbl-gallery-prev:hover,
+.fbl-gallery--fit-contain .fbl-gallery-next:hover {
+    background: #fff;
+    color: var(--fbl-color-primary, #1a1a1a);
+}
 .fbl-gallery-prev { left: 12px; }
 .fbl-gallery-next { right: 12px; }
 
