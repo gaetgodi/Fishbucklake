@@ -1,8 +1,10 @@
 <?php
 /* =========================================================
-   FBL GALLERY - SHORTCODE BUILDER (admin page)
-   Generates a ready-to-paste [fbl_gallery] shortcode with a
-   live dropdown of FileBird folders.
+   FBL GALLERY - SHORTCODE BUILDER v2.0 (admin page)
+   - Generates [fbl_gallery] shortcodes (FileBird folder dropdown)
+   - Live preview panel (AJAX, renders real shortcode output)
+   - Finds pages using the selected folder and can update
+     their shortcodes in place (Divi 5 encoding-aware)
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -32,6 +34,253 @@ add_action('admin_menu', function() {
 });
 
 /* ---------------------------------------------------------
+   Enqueue frontend gallery CSS on the builder page so the
+   preview looks close to the real thing
+   --------------------------------------------------------- */
+add_action('admin_enqueue_scripts', function($hook) {
+    if ($hook !== 'toplevel_page_fbl-gallery-builder') return;
+
+    wp_enqueue_style(
+        'fbl-gallery',
+        get_stylesheet_directory_uri() . '/css/gallery.css',
+        array(),
+        filemtime(get_stylesheet_directory() . '/css/gallery.css')
+    );
+});
+
+/* ---------------------------------------------------------
+   AJAX: render a shortcode preview
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_gallery_preview', function() {
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $shortcode = isset($_POST['shortcode']) ? wp_unslash($_POST['shortcode']) : '';
+
+    // Only allow our own shortcode through
+    if (!preg_match('/^\[fbl_gallery\s[^\]]*\]$/', $shortcode)) {
+        wp_send_json_error('Invalid shortcode.');
+    }
+
+    wp_send_json_success(do_shortcode($shortcode));
+});
+
+/* ---------------------------------------------------------
+   Shortcode extraction helpers (Divi 5 encoding-aware)
+
+   Divi 5 stores Code module content inside block-comment JSON
+   where double quotes appear as an escape token, observed as
+   \\u0022 in raw post_content. We never assume the token:
+   we detect it per match and mirror it when replacing.
+   --------------------------------------------------------- */
+
+/**
+ * Find all fbl_gallery shortcode occurrences in raw post content.
+ * Returns array of ['raw' => stored string, 'decoded' => human form,
+ *                   'token' => quote token used, 'folder' => folder attr]
+ */
+function fbl_gb_find_shortcodes_in_content($content) {
+    $results = array();
+
+    if (!preg_match_all('/\[fbl_gallery\b[^\]]*\]/', $content, $m)) {
+        return $results;
+    }
+
+    foreach ($m[0] as $raw) {
+        // Detect the quote token in order of specificity
+        $token = '"';
+        if (strpos($raw, '\\\\u0022') !== false) {
+            $token = '\\\\u0022';
+        } elseif (strpos($raw, '\\u0022') !== false) {
+            $token = '\\u0022';
+        } elseif (strpos($raw, '\\"') !== false) {
+            $token = '\\"';
+        }
+
+        $decoded = ($token === '"') ? $raw : str_replace($token, '"', $raw);
+
+        // Extract folder attribute from the decoded form
+        $folder = '';
+        if (preg_match('/folder="([^"]*)"/', $decoded, $fm)) {
+            $folder = $fm[1];
+        }
+
+        $results[] = array(
+            'raw'     => $raw,
+            'decoded' => $decoded,
+            'token'   => $token,
+            'folder'  => $folder,
+        );
+    }
+
+    return $results;
+}
+
+/**
+ * Find all pages/posts containing an fbl_gallery shortcode for a folder.
+ * Returns array of instances across posts.
+ */
+function fbl_gb_find_pages_using_folder($folder_name) {
+    global $wpdb;
+
+    $posts = $wpdb->get_results(
+        "SELECT ID, post_title, post_status, post_type, post_content
+         FROM {$wpdb->posts}
+         WHERE post_content LIKE '%fbl_gallery%'
+           AND post_type IN ('page', 'post')
+           AND post_status IN ('publish', 'draft', 'private', 'pending')"
+    );
+
+    $instances = array();
+
+    foreach ($posts as $p) {
+        $found = fbl_gb_find_shortcodes_in_content($p->post_content);
+
+        foreach ($found as $idx => $sc) {
+            if ($sc['folder'] !== $folder_name) continue;
+
+            $instances[] = array(
+                'post_id'    => (int) $p->ID,
+                'post_title' => $p->post_title,
+                'status'     => $p->post_status,
+                'instance'   => $idx,
+                'raw'        => $sc['raw'],
+                'decoded'    => $sc['decoded'],
+                'token'      => $sc['token'],
+                'view_url'   => get_permalink($p->ID),
+                'edit_url'   => get_edit_post_link($p->ID, 'raw'),
+            );
+        }
+    }
+
+    return $instances;
+}
+
+/* ---------------------------------------------------------
+   AJAX: find pages using the selected folder
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_gallery_find_pages', function() {
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $folder = isset($_POST['folder']) ? sanitize_text_field(wp_unslash($_POST['folder'])) : '';
+    if ($folder === '') {
+        wp_send_json_error('No folder given.');
+    }
+
+    $instances = fbl_gb_find_pages_using_folder($folder);
+
+    // Send only what the UI needs; raw travels base64-encoded as an
+    // opaque handle so the update can do exact-match replacement
+    $out = array();
+    foreach ($instances as $i) {
+        $out[] = array(
+            'post_id'    => $i['post_id'],
+            'post_title' => $i['post_title'],
+            'status'     => $i['status'],
+            'instance'   => $i['instance'],
+            'decoded'    => $i['decoded'],
+            'raw'        => base64_encode($i['raw']),
+            'token'      => base64_encode($i['token']),
+            'view_url'   => $i['view_url'],
+        );
+    }
+
+    wp_send_json_success($out);
+});
+
+/* ---------------------------------------------------------
+   AJAX: update selected shortcode instances
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_gallery_update_pages', function() {
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $new_shortcode = isset($_POST['new_shortcode']) ? wp_unslash($_POST['new_shortcode']) : '';
+    if (!preg_match('/^\[fbl_gallery\s[^\]]*\]$/', $new_shortcode)) {
+        wp_send_json_error('Invalid new shortcode.');
+    }
+
+    $items = isset($_POST['items']) ? json_decode(wp_unslash($_POST['items']), true) : null;
+    if (!is_array($items) || empty($items)) {
+        wp_send_json_error('Nothing selected.');
+    }
+
+    $report = array();
+
+    foreach ($items as $item) {
+        $post_id = isset($item['post_id']) ? (int) $item['post_id'] : 0;
+        $raw     = isset($item['raw'])   ? base64_decode($item['raw'], true)   : false;
+        $token   = isset($item['token']) ? base64_decode($item['token'], true) : false;
+
+        if (!$post_id || $raw === false || $token === false) {
+            $report[] = array('post_id' => $post_id, 'ok' => false, 'msg' => 'Bad request data.');
+            continue;
+        }
+
+        $post = get_post($post_id);
+        if (!$post || !current_user_can('edit_post', $post_id)) {
+            $report[] = array('post_id' => $post_id, 'ok' => false, 'msg' => 'Post not found or not editable.');
+            continue;
+        }
+
+        // Exact-match safety: the stored shortcode must still be present verbatim
+        if (strpos($post->post_content, $raw) === false) {
+            $report[] = array(
+                'post_id' => $post_id,
+                'ok'      => false,
+                'msg'     => 'Page changed since Find - not updated. Re-run Find.',
+            );
+            continue;
+        }
+
+        // Re-encode the new shortcode with the exact token the old one used
+        $encoded_new = ($token === '"') ? $new_shortcode : str_replace('"', $token, $new_shortcode);
+
+        // Replace only the first occurrence of this exact raw string
+        $pos = strpos($post->post_content, $raw);
+        $new_content = substr_replace($post->post_content, $encoded_new, $pos, strlen($raw));
+
+        $result = wp_update_post(array(
+            'ID'           => $post_id,
+            'post_content' => $new_content,
+        ), true);
+
+        if (is_wp_error($result)) {
+            $report[] = array('post_id' => $post_id, 'ok' => false, 'msg' => $result->get_error_message());
+            continue;
+        }
+
+        // Clear caches so the change is visible immediately
+        clean_post_cache($post_id);
+        if (function_exists('et_core_clear_cache')) {
+            et_core_clear_cache();
+        }
+        if (function_exists('wp_cache_post_change')) { // WP Super Cache
+            wp_cache_post_change($post_id);
+        }
+
+        $report[] = array(
+            'post_id'  => $post_id,
+            'ok'       => true,
+            'msg'      => 'Updated (revision saved as undo).',
+            'view_url' => get_permalink($post_id),
+        );
+    }
+
+    wp_send_json_success($report);
+});
+
+/* ---------------------------------------------------------
    Builder page
    --------------------------------------------------------- */
 function fbl_gallery_builder_page() {
@@ -52,16 +301,21 @@ function fbl_gallery_builder_page() {
     // Registered image sizes
     $sizes = get_intermediate_image_sizes();
     $sizes[] = 'full';
+
+    $nonce = wp_create_nonce('fbl_gallery_builder');
     ?>
     <div class="wrap">
         <h1>FBL Gallery Shortcode Builder</h1>
-        <p>Pick a FileBird folder and options, then copy the generated shortcode into a Divi Code module.</p>
+        <p>Pick a FileBird folder and options. Preview live, copy the shortcode, or update pages already using this folder.</p>
 
         <?php if (empty($folders)): ?>
             <div class="notice notice-warning"><p>No FileBird folders found. Create folders in Media Library first.</p></div>
         <?php endif; ?>
 
-        <div style="background: #fff; padding: 20px; border: 1px solid #ccc; max-width: 640px;">
+        <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+
+        <!-- ================= OPTIONS PANEL ================= -->
+        <div style="background: #fff; padding: 20px; border: 1px solid #ccc; max-width: 640px; flex: 0 0 auto;">
             <table class="form-table" role="presentation">
                 <tr>
                     <th scope="row"><label for="fblgb-folder">Folder</label></th>
@@ -123,10 +377,10 @@ function fbl_gallery_builder_page() {
                     <th scope="row"><label for="fblgb-order">Order</label></th>
                     <td>
                         <select id="fblgb-order">
-                            <option value="date_desc">date_desc — newest first (default)</option>
-                            <option value="date_asc">date_asc — oldest first</option>
-                            <option value="name">name — alphabetical</option>
-                            <option value="filebird">filebird — FileBird order</option>
+                            <option value="date_desc">date_desc - newest first (default)</option>
+                            <option value="date_asc">date_asc - oldest first</option>
+                            <option value="name">name - alphabetical</option>
+                            <option value="filebird">filebird - FileBird order</option>
                             <option value="random">random</option>
                         </select>
                     </td>
@@ -135,10 +389,10 @@ function fbl_gallery_builder_page() {
                     <th scope="row"><label for="fblgb-shuffle">Shuffle</label></th>
                     <td>
                         <select id="fblgb-shuffle">
-                            <option value="pageload">pageload — new order every visit (default)</option>
-                            <option value="daily">daily — changes at midnight</option>
-                            <option value="weekly">weekly — changes Monday</option>
-                            <option value="never">never — one fixed random order</option>
+                            <option value="pageload">pageload - new order every visit (default)</option>
+                            <option value="daily">daily - changes at midnight</option>
+                            <option value="weekly">weekly - changes Monday</option>
+                            <option value="never">never - one fixed random order</option>
                         </select>
                     </td>
                 </tr>
@@ -153,9 +407,9 @@ function fbl_gallery_builder_page() {
                     <th scope="row"><label for="fblgb-caption">Lightbox caption</label></th>
                     <td>
                         <select id="fblgb-caption">
-                            <option value="caption">caption — only if Caption field is filled (default)</option>
-                            <option value="title">title — fall back to Title/filename</option>
-                            <option value="none">none — never show captions</option>
+                            <option value="caption">caption - only if Caption field is filled (default)</option>
+                            <option value="title">title - fall back to Title/filename</option>
+                            <option value="none">none - never show captions</option>
                         </select>
                     </td>
                 </tr>
@@ -163,9 +417,9 @@ function fbl_gallery_builder_page() {
                     <th scope="row"><label for="fblgb-tcaption">Thumbnail caption</label></th>
                     <td>
                         <select id="fblgb-tcaption">
-                            <option value="none">none — no text under thumbnails (default)</option>
-                            <option value="caption">caption — only if Caption field is filled</option>
-                            <option value="title">title — fall back to Title/filename</option>
+                            <option value="none">none - no text under thumbnails (default)</option>
+                            <option value="caption">caption - only if Caption field is filled</option>
+                            <option value="title">title - fall back to Title/filename</option>
                         </select>
                     </td>
                 </tr>
@@ -174,7 +428,7 @@ function fbl_gallery_builder_page() {
                     <td>
                         <select id="fblgb-link">
                             <option value="lightbox">lightbox (default)</option>
-                            <option value="none">none — images not clickable</option>
+                            <option value="none">none - images not clickable</option>
                         </select>
                     </td>
                 </tr>
@@ -190,10 +444,41 @@ function fbl_gallery_builder_page() {
                 <button type="button" class="button button-primary" id="fblgb-copy">Copy to Clipboard</button>
                 <span id="fblgb-copied" style="margin-left: 10px; color: #00a32a; font-weight: bold; display: none;">Copied!</span>
             </p>
+
+            <hr>
+
+            <h2>Pages using this folder</h2>
+            <p>
+                <button type="button" class="button" id="fblgb-find">Find Pages</button>
+                <span id="fblgb-find-status" style="margin-left: 10px;"></span>
+            </p>
+            <div id="fblgb-pages"></div>
+            <p id="fblgb-update-wrap" style="display: none;">
+                <button type="button" class="button button-primary" id="fblgb-update">Update Selected</button>
+                <span class="description" style="margin-left: 10px;">A revision is saved for each page - undo via page revision history.</span>
+            </p>
+            <div id="fblgb-update-report"></div>
         </div>
+
+        <!-- ================= PREVIEW PANEL ================= -->
+        <div style="background: #fff; padding: 20px; border: 1px solid #ccc; flex: 1 1 500px; min-width: 400px;">
+            <h2 style="margin-top: 0;">Preview
+                <span class="description" style="font-weight: normal; font-size: 12px;">
+                    (approximate - lightbox and carousel autoplay only run on the real page)
+                </span>
+            </h2>
+            <div id="fblgb-preview" style="border: 1px dashed #ccc; padding: 12px; min-height: 120px;">
+                <em>Adjust options to load preview...</em>
+            </div>
+        </div>
+
+        </div><!-- /flex -->
 
         <script>
         (function() {
+            var nonce = '<?php echo esc_js($nonce); ?>';
+            var ajaxurl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+
             var els = {
                 folder:   document.getElementById('fblgb-folder'),
                 view:     document.getElementById('fblgb-view'),
@@ -203,28 +488,36 @@ function fbl_gallery_builder_page() {
                 order:    document.getElementById('fblgb-order'),
                 shuffle:  document.getElementById('fblgb-shuffle'),
                 autoplay: document.getElementById('fblgb-autoplay'),
-                link:     document.getElementById('fblgb-link'),
                 caption:  document.getElementById('fblgb-caption'),
                 tcaption: document.getElementById('fblgb-tcaption'),
+                link:     document.getElementById('fblgb-link'),
                 output:   document.getElementById('fblgb-output'),
                 copyBtn:  document.getElementById('fblgb-copy'),
-                copied:   document.getElementById('fblgb-copied')
+                copied:   document.getElementById('fblgb-copied'),
+                preview:  document.getElementById('fblgb-preview'),
+                findBtn:  document.getElementById('fblgb-find'),
+                findStatus: document.getElementById('fblgb-find-status'),
+                pages:    document.getElementById('fblgb-pages'),
+                updateWrap: document.getElementById('fblgb-update-wrap'),
+                updateBtn:  document.getElementById('fblgb-update'),
+                report:   document.getElementById('fblgb-update-report')
             };
 
             var rowColumns  = document.querySelector('.fblgb-row-columns');
             var rowShuffle  = document.querySelector('.fblgb-row-shuffle');
             var rowAutoplay = document.querySelector('.fblgb-row-autoplay');
 
+            var foundInstances = [];
+            var previewTimer = null;
+
             function build() {
                 var view  = els.view.value;
                 var order = els.order.value;
 
-                // Show/hide dependent rows
                 rowColumns.style.display  = (view === 'carousel') ? 'none' : '';
                 rowAutoplay.style.display = (view === 'carousel') ? '' : 'none';
                 rowShuffle.style.display  = (order === 'random') ? '' : 'none';
 
-                // Build shortcode, omitting values that equal defaults
                 var parts = ['[fbl_gallery folder="' + els.folder.value + '"'];
 
                 if (view !== 'grid') parts.push('view="' + view + '"');
@@ -260,9 +553,160 @@ function fbl_gallery_builder_page() {
                 }
 
                 els.output.textContent = parts.join(' ') + ']';
+
+                schedulePreview();
             }
 
-            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle', 'autoplay', 'link', 'caption', 'tcaption'].forEach(function(key) {
+            function schedulePreview() {
+                if (previewTimer) clearTimeout(previewTimer);
+                previewTimer = setTimeout(loadPreview, 500);
+            }
+
+            function loadPreview() {
+                var body = new URLSearchParams();
+                body.append('action', 'fbl_gallery_preview');
+                body.append('nonce', nonce);
+                body.append('shortcode', els.output.textContent);
+
+                fetch(ajaxurl, { method: 'POST', body: body })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (res.success) {
+                            els.preview.innerHTML = res.data ||
+                                '<em>Shortcode produced no output (empty folder?).</em>';
+                            // Carousel preview: show first slide statically
+                            els.preview.querySelectorAll('.fbl-gallery--carousel .fbl-gallery-item').forEach(function(s, i) {
+                                s.classList.toggle('is-active', i === 0);
+                            });
+                        } else {
+                            els.preview.innerHTML = '<em>Preview error: ' + (res.data || 'unknown') + '</em>';
+                        }
+                    })
+                    .catch(function() {
+                        els.preview.innerHTML = '<em>Preview request failed.</em>';
+                    });
+            }
+
+            function findPages() {
+                els.findStatus.textContent = 'Searching...';
+                els.pages.innerHTML = '';
+                els.report.innerHTML = '';
+                els.updateWrap.style.display = 'none';
+                foundInstances = [];
+
+                var body = new URLSearchParams();
+                body.append('action', 'fbl_gallery_find_pages');
+                body.append('nonce', nonce);
+                body.append('folder', els.folder.value);
+
+                fetch(ajaxurl, { method: 'POST', body: body })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (!res.success) {
+                            els.findStatus.textContent = 'Error: ' + (res.data || 'unknown');
+                            return;
+                        }
+
+                        foundInstances = res.data;
+
+                        if (foundInstances.length === 0) {
+                            els.findStatus.textContent = 'No pages use this folder yet.';
+                            return;
+                        }
+
+                        els.findStatus.textContent = foundInstances.length + ' instance(s) found.';
+
+                        var html = '<table class="widefat striped"><thead><tr>' +
+                            '<th style="width:30px;"></th><th>Page</th><th>Status</th>' +
+                            '<th>Current shortcode</th><th style="width:70px;"></th>' +
+                            '</tr></thead><tbody>';
+
+                        foundInstances.forEach(function(inst, i) {
+                            html += '<tr>' +
+                                '<td><input type="checkbox" class="fblgb-inst" data-i="' + i + '"></td>' +
+                                '<td>' + escapeHtml(inst.post_title) + '</td>' +
+                                '<td>' + escapeHtml(inst.status) + '</td>' +
+                                '<td><code style="font-size:12px;">' + escapeHtml(inst.decoded) + '</code></td>' +
+                                '<td><a href="' + inst.view_url + '" target="_blank">View</a></td>' +
+                                '</tr>';
+                        });
+
+                        html += '</tbody></table>' +
+                            '<p class="description" style="margin-top:8px;">New shortcode that will replace checked rows:<br>' +
+                            '<code style="font-size:12px;">' + escapeHtml(els.output.textContent) + '</code></p>';
+
+                        els.pages.innerHTML = html;
+                        els.updateWrap.style.display = '';
+                    })
+                    .catch(function() {
+                        els.findStatus.textContent = 'Request failed.';
+                    });
+            }
+
+            function updatePages() {
+                var selected = [];
+                els.pages.querySelectorAll('.fblgb-inst:checked').forEach(function(cb) {
+                    var inst = foundInstances[parseInt(cb.getAttribute('data-i'), 10)];
+                    selected.push({ post_id: inst.post_id, raw: inst.raw, token: inst.token });
+                });
+
+                if (selected.length === 0) {
+                    alert('Select at least one page to update.');
+                    return;
+                }
+
+                if (!confirm('Replace the shortcode on ' + selected.length + ' page(s) with:\n\n' +
+                             els.output.textContent + '\n\nA revision is saved for each page.')) {
+                    return;
+                }
+
+                els.report.innerHTML = '<em>Updating...</em>';
+
+                var body = new URLSearchParams();
+                body.append('action', 'fbl_gallery_update_pages');
+                body.append('nonce', nonce);
+                body.append('new_shortcode', els.output.textContent);
+                body.append('items', JSON.stringify(selected));
+
+                fetch(ajaxurl, { method: 'POST', body: body })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (!res.success) {
+                            els.report.innerHTML = '<p style="color:#dc3232;">Error: ' +
+                                escapeHtml(String(res.data || 'unknown')) + '</p>';
+                            return;
+                        }
+
+                        var html = '<ul style="margin-top:10px;">';
+                        res.data.forEach(function(r) {
+                            if (r.ok) {
+                                html += '<li style="color:#00a32a;">Post ' + r.post_id + ': ' +
+                                    escapeHtml(r.msg) +
+                                    ' <a href="' + r.view_url + '" target="_blank">View page</a></li>';
+                            } else {
+                                html += '<li style="color:#dc3232;">Post ' + r.post_id + ': ' +
+                                    escapeHtml(r.msg) + '</li>';
+                            }
+                        });
+                        html += '</ul>';
+                        els.report.innerHTML = html;
+
+                        // Refresh the list so raw handles stay valid
+                        findPages();
+                    })
+                    .catch(function() {
+                        els.report.innerHTML = '<p style="color:#dc3232;">Update request failed.</p>';
+                    });
+            }
+
+            function escapeHtml(s) {
+                var d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            }
+
+            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle',
+             'autoplay', 'caption', 'tcaption', 'link'].forEach(function(key) {
                 els[key].addEventListener('change', build);
                 els[key].addEventListener('input', build);
             });
@@ -276,7 +720,6 @@ function fbl_gallery_builder_page() {
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(text).then(done);
                 } else {
-                    // Fallback for non-HTTPS contexts
                     var ta = document.createElement('textarea');
                     ta.value = text;
                     document.body.appendChild(ta);
@@ -286,6 +729,9 @@ function fbl_gallery_builder_page() {
                     done();
                 }
             });
+
+            els.findBtn.addEventListener('click', findPages);
+            els.updateBtn.addEventListener('click', updatePages);
 
             build();
         })();
