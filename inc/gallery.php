@@ -125,6 +125,7 @@ add_shortcode('fbl_gallery', function($atts) {
         'autoplay' => 5000,
         'link'     => 'lightbox',
         'caption'  => 'caption',
+        'thumb_caption' => 'none',
     ), $atts, 'fbl_gallery');
 
     $folder = trim($atts['folder']);
@@ -161,6 +162,7 @@ add_shortcode('fbl_gallery', function($atts) {
     $group     = 'fbl-' . sanitize_title($folder);
     $autoplay  = max(1000, (int) $atts['autoplay']);
     $cap_mode  = in_array($atts['caption'], array('caption', 'title', 'none'), true) ? $atts['caption'] : 'caption';
+    $tcap_mode = in_array($atts['thumb_caption'], array('none', 'caption', 'title'), true) ? $atts['thumb_caption'] : 'none';
 
     ob_start();
     ?>
@@ -183,6 +185,14 @@ add_shortcode('fbl_gallery', function($atts) {
                 $caption = wp_get_attachment_caption($id);
                 if (!$caption) $caption = get_the_title($id);
             }
+
+            $tcaption = '';
+            if ($tcap_mode === 'caption') {
+                $tcaption = wp_get_attachment_caption($id);
+            } elseif ($tcap_mode === 'title') {
+                $tcaption = wp_get_attachment_caption($id);
+                if (!$tcaption) $tcaption = get_the_title($id);
+            }
         ?>
             <div class="fbl-gallery-item<?php echo ($view === 'carousel' && $i === 0) ? ' is-active' : ''; ?>">
                 <?php if ($lightbox): ?>
@@ -192,8 +202,11 @@ add_shortcode('fbl_gallery', function($atts) {
                        <?php if ($caption): ?>data-caption="<?php echo esc_attr($caption); ?>"<?php endif; ?>>
                         <?php echo $thumb; ?>
                     </a>
-                <?php else: ?>
+                    <?php else: ?>
                     <?php echo $thumb; ?>
+                <?php endif; ?>
+                <?php if ($tcaption): ?>
+                    <div class="fbl-gallery-caption"><?php echo esc_html($tcaption); ?></div>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>

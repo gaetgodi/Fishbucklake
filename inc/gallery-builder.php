@@ -160,6 +160,16 @@ function fbl_gallery_builder_page() {
                     </td>
                 </tr>
                 <tr>
+                    <th scope="row"><label for="fblgb-tcaption">Thumbnail caption</label></th>
+                    <td>
+                        <select id="fblgb-tcaption">
+                            <option value="none">none — no text under thumbnails (default)</option>
+                            <option value="caption">caption — only if Caption field is filled</option>
+                            <option value="title">title — fall back to Title/filename</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
                     <th scope="row"><label for="fblgb-link">Click behavior</label></th>
                     <td>
                         <select id="fblgb-link">
@@ -195,6 +205,7 @@ function fbl_gallery_builder_page() {
                 autoplay: document.getElementById('fblgb-autoplay'),
                 link:     document.getElementById('fblgb-link'),
                 caption:  document.getElementById('fblgb-caption'),
+                tcaption: document.getElementById('fblgb-tcaption'),
                 output:   document.getElementById('fblgb-output'),
                 copyBtn:  document.getElementById('fblgb-copy'),
                 copied:   document.getElementById('fblgb-copied')
@@ -244,10 +255,14 @@ function fbl_gallery_builder_page() {
                     parts.push('caption="' + els.caption.value + '"');
                 }
 
+                if (els.tcaption.value !== 'none') {
+                    parts.push('thumb_caption="' + els.tcaption.value + '"');
+                }
+
                 els.output.textContent = parts.join(' ') + ']';
             }
 
-            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle', 'autoplay', 'link', 'caption'].forEach(function(key) {
+            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle', 'autoplay', 'link', 'caption', 'tcaption'].forEach(function(key) {
                 els[key].addEventListener('change', build);
                 els[key].addEventListener('input', build);
             });

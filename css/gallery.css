@@ -35,6 +35,24 @@
     transform: scale(1.04);
 }
 
+.fbl-gallery-caption {
+    padding: 0.4rem 0.25rem 0;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    color: var(--fbl-color-text-muted, #666);
+    text-align: center;
+}
+
+.fbl-gallery--carousel .fbl-gallery-caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.6rem 3.5rem;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    z-index: 1;
+}
 /* ---------------- GRID ---------------- */
 
 .fbl-gallery--grid {
