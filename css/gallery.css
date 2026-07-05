@@ -159,18 +159,12 @@
 /* ---------------- RESPONSIVE ---------------- */
 
 @media (max-width: 980px) {
-    .fbl-gallery--grid,
-    .fbl-gallery--masonry {
-        --fbl-gallery-columns: 2;
-    }
+    .fbl-gallery--grid    { grid-template-columns: repeat(2, 1fr); }
     .fbl-gallery--masonry { columns: 2; }
 }
 
 @media (max-width: 600px) {
-    .fbl-gallery--grid,
-    .fbl-gallery--masonry {
-        --fbl-gallery-columns: 1;
-    }
+    .fbl-gallery--grid    { grid-template-columns: repeat(1, 1fr); }
     .fbl-gallery--masonry { columns: 1; }
 
     .fbl-gallery-prev,
