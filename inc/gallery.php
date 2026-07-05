@@ -14,7 +14,9 @@
 function fbl_gallery_get_ids($folder_name) {
     global $wpdb;
 
-    $cache_key = 'fbl_gallery_' . md5($folder_name);
+    $gen = (int) get_option('fbl_gallery_cache_gen', 1);
+    $cache_key = 'fbl_gallery_' . $gen . '_' . md5($folder_name);
+
     $ids = get_transient($cache_key);
 
     if ($ids !== false) {
@@ -50,17 +52,16 @@ function fbl_gallery_get_ids($folder_name) {
    Cache invalidation - FileBird changes & attachment changes
    --------------------------------------------------------- */
 function fbl_gallery_flush_cache() {
-    global $wpdb;
-    $wpdb->query(
-        "DELETE FROM {$wpdb->options}
-         WHERE option_name LIKE '_transient_fbl_gallery_%'
-            OR option_name LIKE '_transient_timeout_fbl_gallery_%'"
-    );
+    $gen = (int) get_option('fbl_gallery_cache_gen', 1);
+    update_option('fbl_gallery_cache_gen', $gen + 1, false);
 }
-add_action('fbd_after_set_folder',    'fbl_gallery_flush_cache'); // FileBird: attachment moved
-add_action('fbd_after_delete_folder', 'fbl_gallery_flush_cache'); // FileBird: folder deleted
-add_action('add_attachment',          'fbl_gallery_flush_cache');
-add_action('delete_attachment',       'fbl_gallery_flush_cache');
+add_action('fbv_after_set_folder',      'fbl_gallery_flush_cache'); // image moved to a folder
+add_action('fbv_after_assign_folder',   'fbl_gallery_flush_cache'); // bulk assign
+add_action('fbv_after_folder_deleted',  'fbl_gallery_flush_cache'); // folder deleted
+add_action('fbv_after_delete_all',      'fbl_gallery_flush_cache'); // all folders deleted
+add_action('fbv_after_folder_renamed',  'fbl_gallery_flush_cache'); // cache keys are name-based
+add_action('add_attachment',            'fbl_gallery_flush_cache');
+add_action('delete_attachment',         'fbl_gallery_flush_cache');
 
 /* ---------------------------------------------------------
    Ordering
