@@ -252,7 +252,7 @@ add_action('wp_ajax_fbl_gallery_update_pages', function() {
 
         $result = wp_update_post(array(
             'ID'           => $post_id,
-            'post_content' => $new_content,
+            'post_content' => wp_slash($new_content),
         ), true);
 
         if (is_wp_error($result)) {
