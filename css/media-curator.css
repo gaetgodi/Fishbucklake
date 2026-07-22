@@ -128,3 +128,48 @@
     height: auto;
     border-radius: 2px;
 }
+/* ===== APPEND THESE RULES to your existing css/media-curator.css ===== */
+/* Custom target suggestion dropdown (replaces the native datalist) */
+
+.fbl-curator-target-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.fbl-curator-suggest {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 320px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #8c8f94;
+    border-top: none;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.fbl-curator-suggest-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.fbl-curator-suggest-item:hover {
+    background: #2271b1;
+    color: #fff;
+}
+
+.fbl-curator-suggest-cnt {
+    color: #8c8f94;
+    font-size: 11px;
+    margin-left: 1rem;
+}
+
+.fbl-curator-suggest-item:hover .fbl-curator-suggest-cnt {
+    color: #dbe4ef;
+}

@@ -9,8 +9,9 @@
      (not saved). Flag rows + "Copy title -> caption" commits them.
    - Select rows and copy (folder-membership, non-destructive) into a
      WEB_ target folder. Per-row copy and batch copy both supported.
-   - Target folder is created at root if it does not yet exist; new
-     folders are pushed back to the source dropdown live.
+   - Target folder chosen via a custom suggestion dropdown (filters as
+     you type, shows counts) and created at root if it does not exist.
+   - New folders are pushed back to the source dropdown + suggestions live.
    - Select-all toggles for both Flag and Select columns.
    - Hover a thumbnail for a larger preview.
 
@@ -142,13 +143,11 @@ function fbl_media_curator_render_page() {
             <span class="fbl-curator-sep">|</span>
 
             <label>Copy selected to:
-            <input type="text" id="fbl-curator-target" name="fbl-curator-target" value="WEB_" size="40"
-                       list="fbl-curator-targets" />
-                       <datalist id="fbl-curator-targets">
-                    <?php foreach ($folders as $f): ?>
-                        <option value="<?php echo esc_attr($f->name); ?>"><?php echo esc_html($f->name); ?></option>
-                    <?php endforeach; ?>
-                </datalist>
+                <span class="fbl-curator-target-wrap">
+                    <input type="text" id="fbl-curator-target" name="fbl-curator-target"
+                           value="WEB_" size="40" autocomplete="off">
+                    <div id="fbl-curator-suggest" class="fbl-curator-suggest" style="display:none;"></div>
+                </span>
             </label>
             <button type="button" class="button button-primary" id="fbl-curator-batchcopy">
                 Copy selected →
@@ -184,6 +183,11 @@ function fbl_media_curator_render_page() {
         ajax:  <?php echo json_encode(admin_url('admin-ajax.php')); ?>,
         nonce: <?php echo json_encode($nonce); ?>
     };
+    window.FBL_CURATOR_FOLDERS = <?php
+        echo json_encode(array_map(function ($f) {
+            return array('name' => $f->name, 'cnt' => (int) $f->cnt);
+        }, array_values($folders)));
+    ?>;
     </script>
     <?php
 }
@@ -277,7 +281,6 @@ add_action('wp_ajax_fbl_curator_copycaptions', function () {
     check_ajax_referer('fbl_curator', 'nonce');
     if (!current_user_can('upload_files')) wp_send_json_error('forbidden');
 
-    // values arrive as id => caption pairs (parallel arrays)
     $ids  = isset($_POST['ids'])  ? array_map('intval', (array) $_POST['ids']) : array();
     $vals = isset($_POST['vals']) ? (array) wp_unslash($_POST['vals']) : array();
     if (empty($ids)) wp_send_json_error('no rows flagged');
