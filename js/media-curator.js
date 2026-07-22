@@ -1,6 +1,6 @@
 /**
  * FBL Media Curator
- * Admin tool: folder-scoped title/caption editing + copy-to-WEB.
+ * Admin tool: folder-scoped title/caption editing + copy-to-WEB + remove-from-folder.
  */
 (function () {
     'use strict';
@@ -8,6 +8,7 @@
     var cfg = window.FBL_CURATOR || {};
     var els = {};
     var suggestFolders = (window.FBL_CURATOR_FOLDERS || []).slice();
+    var currentFolder = '';
 
     function $(sel, ctx) { return (ctx || document).querySelector(sel); }
     function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
@@ -24,6 +25,7 @@
         els.status     = $('#fbl-curator-status');
         els.copycap    = $('#fbl-curator-copycaptions');
         els.batchcopy  = $('#fbl-curator-batchcopy');
+        els.remove     = $('#fbl-curator-remove');
         els.flagall    = $('#fbl-curator-flagall');
         els.selectall  = $('#fbl-curator-selectall');
         els.hover      = $('#fbl-curator-hover');
@@ -33,13 +35,13 @@
         els.source.addEventListener('change', onSourceChange);
         els.copycap.addEventListener('click', onCopyCaptions);
         els.batchcopy.addEventListener('click', onBatchCopy);
+        els.remove.addEventListener('click', onRemoveFromFolder);
         els.flagall.addEventListener('change', function () { toggleColumn('.fbl-curator-flag', els.flagall.checked); });
         els.selectall.addEventListener('change', function () { toggleColumn('.fbl-curator-select', els.selectall.checked); });
 
         initTargetSuggest();
     });
 
-    // "Fishing_FBL" -> "WEB_Fishing"; anything else -> "WEB_" + name.
     function suggestTarget(name) {
         if (!name) return 'WEB_';
         var base = name;
@@ -69,9 +71,11 @@
 
     function onSourceChange() {
         var folder = els.source.value;
+        currentFolder = folder;
         els.status.textContent = '';
         if (els.flagall) els.flagall.checked = false;
         if (els.selectall) els.selectall.checked = false;
+        updateRemoveLabel();
         if (!folder) {
             els.table.style.display = 'none';
             els.actions.style.display = 'none';
@@ -103,11 +107,17 @@
         });
     }
 
+    function updateRemoveLabel() {
+        if (!els.remove) return;
+        els.remove.textContent = currentFolder
+            ? 'Remove selected from ' + currentFolder
+            : 'Remove selected from folder';
+    }
+
     function buildRow(it) {
         var tr = document.createElement('tr');
         tr.dataset.id = it.id;
 
-        // image + hover preview
         var tdImg = document.createElement('td');
         var img = document.createElement('img');
         img.src = it.thumb || '';
@@ -126,12 +136,9 @@
         tdImg.appendChild(fn);
         tr.appendChild(tdImg);
 
-        // title
         tr.appendChild(fieldCell(it.id, 'title', it.title, ''));
-        // caption — pass suggestion so empty captions show muted title
         tr.appendChild(fieldCell(it.id, 'caption', it.caption, it.suggestion));
 
-        // flag (caption-copy)
         var tdFlag = document.createElement('td');
         tdFlag.style.textAlign = 'center';
         var flag = document.createElement('input');
@@ -140,7 +147,6 @@
         tdFlag.appendChild(flag);
         tr.appendChild(tdFlag);
 
-        // select (web-copy)
         var tdSel = document.createElement('td');
         tdSel.style.textAlign = 'center';
         var sel = document.createElement('input');
@@ -149,7 +155,6 @@
         tdSel.appendChild(sel);
         tr.appendChild(tdSel);
 
-        // per-row copy button
         var tdCopy = document.createElement('td');
         var btn = document.createElement('button');
         btn.type = 'button';
@@ -162,7 +167,6 @@
         return tr;
     }
 
-    // value = saved value; suggestion = muted placeholder-as-value when empty
     function fieldCell(id, field, value, suggestion) {
         var td = document.createElement('td');
         var inp = document.createElement('input');
@@ -175,7 +179,7 @@
             inp.dataset.orig = value;
         } else if (suggestion) {
             inp.value = suggestion;
-            inp.dataset.orig = '';           // real saved value is empty
+            inp.dataset.orig = '';
             inp.dataset.suggestion = '1';
             inp.classList.add('is-suggestion');
         } else {
@@ -183,7 +187,6 @@
             inp.dataset.orig = '';
         }
 
-        // typing in a suggestion field adopts it (no longer muted)
         inp.addEventListener('input', function () {
             if (inp.dataset.suggestion) {
                 delete inp.dataset.suggestion;
@@ -192,7 +195,7 @@
         });
 
         var save = function () {
-            if (inp.dataset.suggestion) return;          // muted suggestion, don't save
+            if (inp.dataset.suggestion) return;
             if (inp.value === inp.dataset.orig) return;
             inp.classList.add('is-saving');
             ajax('fbl_curator_save', { id: id, field: field, value: inp.value }).then(function (res) {
@@ -224,7 +227,6 @@
         $all(sel, els.rows).forEach(function (cb) { cb.checked = on; });
     }
 
-    // Re-sort rows by title (case-insensitive).
     function resort() {
         var rows = $all('tr', els.rows);
         rows.sort(function (a, b) {
@@ -257,10 +259,9 @@
         els.hover.innerHTML = '';
     }
 
-    /* ---- custom target suggestion dropdown (replaces native datalist) ---- */
+    /* ---- custom target suggestion dropdown ---- */
     function initTargetSuggest() {
         if (!els.target || !els.suggest) return;
-
         els.target.addEventListener('input', renderSuggest);
         els.target.addEventListener('focus', renderSuggest);
         els.target.addEventListener('keydown', function (e) {
@@ -285,7 +286,7 @@
             item.innerHTML = '<span>' + escapeHtml(f.name) + '</span>' +
                              '<span class="fbl-curator-suggest-cnt">' + f.cnt + '</span>';
             item.addEventListener('mousedown', function (e) {
-                e.preventDefault();                 // fire before input blurs
+                e.preventDefault();
                 els.target.value = f.name;
                 hideSuggest();
                 els.target.focus();
@@ -318,10 +319,7 @@
         var flagged = $all('tr', els.rows).filter(function (r) {
             return $('.fbl-curator-flag', r).checked;
         });
-        if (!flagged.length) {
-            els.status.textContent = 'No rows flagged.';
-            return;
-        }
+        if (!flagged.length) { els.status.textContent = 'No rows flagged.'; return; }
         var ids = [], vals = [];
         flagged.forEach(function (r) {
             ids.push(r.dataset.id);
@@ -381,7 +379,52 @@
         });
     }
 
-    // If the copy created a new folder, add it to the source dropdown + suggestions live.
+    /* ---- remove from current folder (membership only, orphan-guarded) ---- */
+    function onRemoveFromFolder() {
+        if (!currentFolder) { els.status.textContent = 'No folder loaded.'; return; }
+        var selected = $all('tr', els.rows).filter(function (r) {
+            return $('.fbl-curator-select', r).checked;
+        });
+        if (!selected.length) { els.status.textContent = 'No rows selected.'; return; }
+        var ids = selected.map(function (r) { return r.dataset.id; });
+
+        if (!window.confirm('Remove ' + ids.length + ' image(s) from "' + currentFolder +
+            '"?\n\nThe image files are NOT deleted — they stay in the library and in any other folder they belong to. Any image that exists in no other folder will be kept here to avoid orphaning it.')) {
+            return;
+        }
+
+        els.remove.disabled = true;
+        els.status.textContent = 'removing from ' + currentFolder + '…';
+        ajax('fbl_curator_removefromfolder', { folder: currentFolder, ids: ids }).then(function (res) {
+            els.remove.disabled = false;
+            if (!res.success) { els.status.textContent = 'error: ' + (res.data || 'failed'); return; }
+
+            // drop the successfully-removed rows from the table
+            var keptSet = {};
+            (res.data.kept_ids || []).forEach(function (id) { keptSet[String(id)] = true; });
+            selected.forEach(function (r) {
+                if (!keptSet[r.dataset.id]) {
+                    r.parentNode.removeChild(r);
+                } else {
+                    $('.fbl-curator-select', r).checked = false; // kept: just deselect
+                }
+            });
+            if (els.selectall) els.selectall.checked = false;
+
+            // update the visible image count for this folder
+            els.count.textContent = res.data.new_count + ' image' + (res.data.new_count === 1 ? '' : 's');
+            updateOptionCount(currentFolder, res.data.new_count);
+            addSuggestFolder(currentFolder, res.data.new_count);
+
+            var msg = 'Removed ' + res.data.removed + ' from ' + currentFolder + '.';
+            if (res.data.kept > 0) {
+                msg += ' Kept ' + res.data.kept + ' that exist in no other folder (would be orphaned).';
+            }
+            els.status.textContent = msg;
+        });
+    }
+
+    /* ---- new folder from copy: sync dropdown + suggestions ---- */
     function maybeAddFolder(data) {
         if (!data.created) {
             updateOptionCount(data.target, data.new_count);

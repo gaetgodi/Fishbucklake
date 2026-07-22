@@ -173,3 +173,20 @@
 .fbl-curator-suggest-item:hover .fbl-curator-suggest-cnt {
     color: #dbe4ef;
 }
+/* ===== APPEND to css/media-curator.css ===== */
+/* Remove-from-folder button — cautious styling so it isn't mistaken for Copy */
+
+.fbl-curator-remove {
+    color: #b32d2e;
+    border-color: #b32d2e;
+}
+
+.fbl-curator-remove:hover:not(:disabled) {
+    background: #b32d2e;
+    color: #fff;
+    border-color: #b32d2e;
+}
+
+.fbl-curator-remove:disabled {
+    opacity: 0.6;
+}

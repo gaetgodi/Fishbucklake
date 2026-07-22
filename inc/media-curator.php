@@ -1,7 +1,7 @@
 <?php
 /* =========================================================
    FBL MEDIA CURATOR
-   Folder-scoped Title/Caption editor + copy-to-WEB tool.
+   Folder-scoped Title/Caption editor + copy-to-WEB + remove-from-folder.
 
    - Pick a source FileBird folder; edit Title & Caption inline.
    - Table live-sorts by Title (drives [fbl_gallery order="name"]).
@@ -9,6 +9,9 @@
      (not saved). Flag rows + "Copy title -> caption" commits them.
    - Select rows and copy (folder-membership, non-destructive) into a
      WEB_ target folder. Per-row copy and batch copy both supported.
+   - Select rows and REMOVE them from the current folder (membership only,
+     never deletes the file). Orphan guard: refuses to remove an image
+     that exists in no other folder, so nothing lands in "uncategorized".
    - Target folder chosen via a custom suggestion dropdown (filters as
      you type, shows counts) and created at root if it does not exist.
    - New folders are pushed back to the source dropdown + suggestions live.
@@ -51,8 +54,6 @@ function fbl_curator_all_folders() {
          GROUP BY f.id, f.name"
     );
     if (!$rows) return array();
-    // The LEFT JOIN on posts makes non-image / missing rows NULL, and
-    // COUNT() ignores NULLs, so cnt reflects image attachments only.
     usort($rows, function ($a, $b) {
         $af = (substr($a->name, -4) === '_FBL') ? 0 : 1;
         $bf = (substr($b->name, -4) === '_FBL') ? 0 : 1;
@@ -118,7 +119,8 @@ function fbl_media_curator_render_page() {
             Pick a source folder to edit titles and captions. Titles drive
             <code>[fbl_gallery order="name"]</code>. Empty captions are pre-filled with the
             title as a muted suggestion — flag rows and use the button to commit them.
-            Select rows and copy them (non-destructively) into a WEB target folder.
+            Select rows to copy them into a WEB target folder, or remove them from the
+            current folder (the image file is never deleted).
         </p>
 
         <div class="fbl-curator-toolbar">
@@ -152,6 +154,13 @@ function fbl_media_curator_render_page() {
             <button type="button" class="button button-primary" id="fbl-curator-batchcopy">
                 Copy selected →
             </button>
+
+            <span class="fbl-curator-sep">|</span>
+
+            <button type="button" class="button fbl-curator-remove" id="fbl-curator-remove">
+                Remove selected from folder
+            </button>
+
             <span id="fbl-curator-status" class="fbl-curator-status"></span>
         </div>
 
@@ -164,7 +173,7 @@ function fbl_media_curator_render_page() {
                     <th style="width:50px;" title="Flag for caption-copy">
                         Flag<br><input type="checkbox" id="fbl-curator-flagall" title="Flag all">
                     </th>
-                    <th style="width:60px;" title="Select for WEB copy">
+                    <th style="width:60px;" title="Select for copy / remove">
                         Select<br><input type="checkbox" id="fbl-curator-selectall" title="Select all">
                     </th>
                     <th style="width:90px;">Copy</th>
@@ -237,7 +246,6 @@ add_action('wp_ajax_fbl_curator_load', function () {
             'filename'   => basename(get_attached_file($id)),
             'title'      => $title,
             'caption'    => $caption,
-            // suggestion is shown (muted) only when caption is empty
             'suggestion' => ($caption === '' || $caption === null) ? $title : '',
         );
     }
@@ -274,8 +282,6 @@ add_action('wp_ajax_fbl_curator_save', function () {
 
 /* ---------------------------------------------------------
    AJAX: commit captions for flagged rows.
-   Writes the supplied value per id (so committed suggestions match
-   what the user saw); falls back to the post title if none supplied.
    --------------------------------------------------------- */
 add_action('wp_ajax_fbl_curator_copycaptions', function () {
     check_ajax_referer('fbl_curator', 'nonce');
@@ -331,5 +337,63 @@ add_action('wp_ajax_fbl_curator_copyweb', function () {
         'skipped'   => count($ids) - $copied,
         'created'   => $created,
         'new_count' => fbl_curator_folder_count($tid),
+    ));
+});
+
+/* ---------------------------------------------------------
+   AJAX: remove attachments from the current folder (membership only).
+   Orphan guard: an image that exists in NO other folder is kept and
+   reported, so nothing is stranded into "uncategorized".
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_curator_removefromfolder', function () {
+    check_ajax_referer('fbl_curator', 'nonce');
+    if (!current_user_can('upload_files')) wp_send_json_error('forbidden');
+
+    $folder = isset($_POST['folder']) ? sanitize_text_field(wp_unslash($_POST['folder'])) : '';
+    $ids    = isset($_POST['ids']) ? array_map('intval', (array) $_POST['ids']) : array();
+
+    if (empty($ids))    wp_send_json_error('no images selected');
+    if ($folder === '') wp_send_json_error('no folder loaded');
+
+    $fid = fbl_curator_folder_id($folder);
+    if (!$fid) wp_send_json_error('folder not found');
+
+    global $wpdb;
+    $table = "{$wpdb->prefix}fbv_attachment_folder";
+
+    $removed = 0;
+    $kept    = array(); // ids that would be orphaned, so we skip them
+
+    foreach ($ids as $id) {
+        // how many folders does this image currently belong to?
+        $total = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE attachment_id = %d", $id
+        ));
+        // is it actually in THIS folder?
+        $here = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE attachment_id = %d AND folder_id = %d", $id, $fid
+        ));
+        if ($here === 0) {
+            continue; // not in this folder anyway; nothing to do
+        }
+        if ($total <= 1) {
+            // removing here would leave it in no folder -> guard: keep it
+            $kept[] = $id;
+            continue;
+        }
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$table} WHERE attachment_id = %d AND folder_id = %d", $id, $fid
+        ));
+        $removed++;
+    }
+
+    fbl_curator_flush();
+
+    wp_send_json_success(array(
+        'removed'    => $removed,
+        'kept'       => count($kept),
+        'kept_ids'   => $kept,
+        'new_count'  => fbl_curator_folder_count($fid),
+        'folder'     => $folder,
     ));
 });
