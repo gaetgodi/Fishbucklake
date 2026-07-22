@@ -338,6 +338,14 @@
         opt.value = data.target;
         opt.textContent = data.target + ' (' + data.new_count + ')';
         els.source.appendChild(opt);
+
+        // also add to the target datalist so it's suggestable next time
+        var dl = document.getElementById('fbl-curator-targets');
+        if (dl && !$all('option', dl).some(function (o) { return o.value === data.target; })) {
+            var dlopt = document.createElement('option');
+            dlopt.value = data.target;
+            dl.appendChild(dlopt);
+        }
     }
 
     function updateOptionCount(name, count) {
