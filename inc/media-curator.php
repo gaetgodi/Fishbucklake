@@ -142,7 +142,7 @@ function fbl_media_curator_render_page() {
             <span class="fbl-curator-sep">|</span>
 
             <label>Copy selected to:
-            <input type="text" id="fbl-curator-target" value="WEB_" size="40"
+            <input type="text" id="fbl-curator-target" name="fbl-curator-target" value="WEB_" size="40"
                        list="fbl-curator-targets" autocomplete="off" />
                        <datalist id="fbl-curator-targets">
                     <?php foreach ($folders as $f): ?>
