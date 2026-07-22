@@ -1,0 +1,92 @@
+/**
+ * FBL Media Curator — admin styles
+ */
+
+.fbl-curator .fbl-curator-toolbar {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.fbl-curator-toolbar select {
+    min-width: 220px;
+    margin-left: 0.5rem;
+}
+
+.fbl-curator-count {
+    margin-left: 1rem;
+    color: #646970;
+    font-style: italic;
+}
+
+.fbl-curator-actions {
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.fbl-curator-sep {
+    color: #c3c4c7;
+    margin: 0 0.5rem;
+}
+
+.fbl-curator-status {
+    margin-left: 0.5rem;
+    color: #2271b1;
+    font-style: italic;
+}
+
+/* thumbnails */
+.fbl-curator-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 3px;
+    display: block;
+    background: #f0f0f1;
+}
+
+.fbl-curator-fn {
+    font-size: 10px;
+    color: #8c8f94;
+    margin-top: 2px;
+    word-break: break-all;
+    max-width: 60px;
+    line-height: 1.2;
+}
+
+/* editable fields */
+.fbl-curator-field {
+    width: 100%;
+    transition: background-color 0.3s ease, box-shadow 0.2s ease;
+}
+
+.fbl-curator-field.is-saving {
+    background: #fff8e5;
+}
+
+.fbl-curator-field.is-saved {
+    background: #edfaef;
+    box-shadow: 0 0 0 1px #00a32a inset;
+}
+
+.fbl-curator-field.is-error {
+    background: #fcf0f1;
+    box-shadow: 0 0 0 1px #d63638 inset;
+}
+
+/* keep the title column a touch narrower than caption */
+.fbl-curator-table th:nth-child(2) { width: 28%; }
+.fbl-curator-table th:nth-child(3) { width: auto; }
+
+.fbl-curator-table td {
+    vertical-align: middle;
+}
