@@ -88,9 +88,11 @@
 
 .fbl-catch-image {
     display: block;
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    max-height: 70vh;
     height: auto;
-    max-width: 1200px;
+    object-fit: contain;
     margin: 0 auto;
     border-radius: var(--fbl-radius);
 }
