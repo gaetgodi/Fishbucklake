@@ -142,11 +142,11 @@ function fbl_media_curator_render_page() {
             <span class="fbl-curator-sep">|</span>
 
             <label>Copy selected to:
-                <input type="text" id="fbl-curator-target" value="WEB_" size="22"
+            <input type="text" id="fbl-curator-target" value="WEB_" size="40"
                        list="fbl-curator-targets" autocomplete="off" />
-                <datalist id="fbl-curator-targets">
+                       <datalist id="fbl-curator-targets">
                     <?php foreach ($folders as $f): ?>
-                        <option value="<?php echo esc_attr($f->name); ?>"></option>
+                        <option value="<?php echo esc_attr($f->name); ?>"><?php echo esc_html($f->name); ?></option>
                     <?php endforeach; ?>
                 </datalist>
             </label>

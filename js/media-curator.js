@@ -344,6 +344,7 @@
         if (dl && !$all('option', dl).some(function (o) { return o.value === data.target; })) {
             var dlopt = document.createElement('option');
             dlopt.value = data.target;
+            dlopt.textContent = data.target;
             dl.appendChild(dlopt);
         }
     }
