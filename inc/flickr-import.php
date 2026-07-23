@@ -248,6 +248,161 @@ function fbl_fi_resize($path, $maxedge, $quality) {
     if (is_wp_error($saved)) return 'gd: ' . $saved->get_error_message();
     return true;
 }
+# Flickr Import — chunked upload
+
+Splits the zip client-side into 5 MB chunks so nginx's `client_max_body_size`
+(128 MB on this vhost) is never hit, no matter how large the album. Also gives
+a real upload progress bar and lets a failed chunk retry without restarting.
+
+Two edits: one new AJAX handler in the PHP, and a replacement JS file.
+
+---
+
+## EDIT 1 — PHP: add the chunk-receiver
+
+Open `inc/flickr-import.php`. Paste this block **just above** the
+`/* AJAX 1: receive the zip ... */` comment:
+
+```php
+/* ---------------------------------------------------------
+   AJAX 0: receive one chunk of the zip.
+   The browser slices the file; we append each piece in order.
+   On the final chunk the assembled zip is handed to the same
+   extraction routine the single-shot upload uses.
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_fi_chunk', function () {
+    check_ajax_referer('fbl_flickr_import', 'nonce');
+    if (!current_user_can('upload_files')) wp_send_json_error('forbidden');
+
+    $uid   = isset($_POST['uid'])   ? preg_replace('/[^a-zA-Z0-9]/', '', wp_unslash($_POST['uid'])) : '';
+    $index = isset($_POST['index']) ? (int) $_POST['index'] : -1;
+    $total = isset($_POST['total']) ? (int) $_POST['total'] : 0;
+    $name  = isset($_POST['name'])  ? sanitize_file_name(wp_unslash($_POST['name'])) : 'album.zip';
+
+    if ($uid === '' || $index < 0 || $total < 1) wp_send_json_error('bad chunk request');
+    if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
+        wp_send_json_error('chunk upload error');
+    }
+
+    $dir  = trailingslashit(fbl_fi_workdir()) . 'chunks';
+    if (!file_exists($dir)) wp_mkdir_p($dir);
+    $part = $dir . '/' . $uid . '.part';
+
+    // first chunk starts a fresh file
+    $mode = ($index === 0) ? 'wb' : 'ab';
+    $in   = fopen($_FILES['chunk']['tmp_name'], 'rb');
+    $out  = fopen($part, $mode);
+    if (!$in || !$out) wp_send_json_error('could not write chunk');
+    stream_copy_to_stream($in, $out);
+    fclose($in);
+    fclose($out);
+
+    if ($index + 1 < $total) {
+        wp_send_json_success(array('received' => $index + 1, 'total' => $total, 'complete' => false));
+    }
+
+    // final chunk -> extract
+    $res = fbl_fi_extract_zip($part, $name);
+    @unlink($part);
+
+    if (is_string($res)) wp_send_json_error($res);
+    $res['complete'] = true;
+    wp_send_json_success($res);
+});
+
+/**
+ * Extract a zip of images into a session dir and return a manifest array,
+ * or an error string. Shared by the chunked and single-shot upload paths.
+ */
+function fbl_fi_extract_zip($zippath, $origname) {
+    if (!class_exists('ZipArchive')) return 'ZipArchive not available';
+
+    $zip = new ZipArchive();
+    if ($zip->open($zippath) !== true) return 'could not open zip';
+
+    $session = 'imp_' . wp_generate_password(8, false, false);
+    $dest    = trailingslashit(fbl_fi_workdir()) . $session;
+    wp_mkdir_p($dest);
+
+    $files   = array();
+    $topdirs = array();
+    $skipped = 0;
+
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $entry = $zip->getNameIndex($i);
+        if (!fbl_fi_safe_entry($entry)) { $skipped++; continue; }
+
+        if (substr($entry, -1) === '/') {
+            $parts = explode('/', trim($entry, '/'));
+            if (!empty($parts[0])) $topdirs[$parts[0]] = true;
+            continue;
+        }
+        if (!fbl_fi_is_image_name($entry)) { $skipped++; continue; }
+
+        if (strpos($entry, '/') !== false) {
+            $parts = explode('/', $entry);
+            $topdirs[$parts[0]] = true;
+        }
+
+        $target = $dest . '/' . basename($entry);
+        $n = 1;
+        while (file_exists($target)) {
+            $target = $dest . '/' . pathinfo(basename($entry), PATHINFO_FILENAME)
+                    . '-' . $n . '.' . pathinfo($entry, PATHINFO_EXTENSION);
+            $n++;
+        }
+
+        $stream = $zip->getStream($entry);
+        if (!$stream) { $skipped++; continue; }
+        $out = fopen($target, 'wb');
+        if ($out) {
+            stream_copy_to_stream($stream, $out);
+            fclose($out);
+            $files[] = basename($target);
+        } else {
+            $skipped++;
+        }
+        fclose($stream);
+    }
+    $zip->close();
+
+    if (empty($files)) return 'no images found in that zip';
+
+    $album = '';
+    $tops  = array_keys($topdirs);
+    if (count($tops) === 1) $album = $tops[0];
+    if ($album === '')      $album = pathinfo($origname, PATHINFO_FILENAME);
+    $album = trim(preg_replace('/\s+/', ' ', str_replace(array('_', '-'), ' ', $album)));
+
+    set_transient('fbl_fi_' . $session, array(
+        'dir'   => $dest,
+        'files' => $files,
+    ), 6 * HOUR_IN_SECONDS);
+
+    return array(
+        'session' => $session,
+        'count'   => count($files),
+        'skipped' => $skipped,
+        'album'   => $album,
+        'folder'  => fbl_fi_unique_folder_name($album),
+    );
+}
+```
+
+---
+
+## EDIT 2 — JS: replace `js/flickr-import.js` entirely
+
+Overwrite the file with the version supplied alongside this note
+(`flickr-import.js`). It uploads in 5 MB chunks with a progress bar,
+then hands off to the same batched import as before.
+
+---
+
+## Note on the old single-shot handler
+
+The original `wp_ajax_fbl_fi_upload` handler can stay — it is simply no longer
+called by the JS. Leaving it costs nothing and keeps a fallback path available.
 
 /* ---------------------------------------------------------
    AJAX 1: receive the zip, extract, build a manifest
