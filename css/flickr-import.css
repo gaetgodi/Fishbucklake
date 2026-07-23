@@ -1,0 +1,40 @@
+/**
+ * FBL Flickr Import — admin styles
+ */
+
+.fbl-fi-status {
+    margin-left: 0.75rem;
+    color: #2271b1;
+    font-style: italic;
+}
+
+.fbl-fi-bar {
+    height: 18px;
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.fbl-fi-bar-fill {
+    height: 100%;
+    width: 0;
+    background: #2271b1;
+    transition: width 0.25s ease;
+}
+
+.fbl-fi-log {
+    max-height: 260px;
+    overflow-y: auto;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    padding: 0.5rem 0.75rem;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.fbl-fi-log-line.is-ok  { color: #1d6f2b; }
+.fbl-fi-log-line.is-err { color: #b32d2e; }
