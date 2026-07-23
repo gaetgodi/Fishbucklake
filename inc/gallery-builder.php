@@ -21,15 +21,13 @@ add_action('admin_init', function() {
 /* ---------------------------------------------------------
    Admin menu
    --------------------------------------------------------- */
-add_action('admin_menu', function() {
-    add_menu_page(
+   add_action('admin_menu', function() {
+    add_media_page(
         'FBL Gallery Shortcode Builder',
         'Gallery Builder',
         'manage_fbl_gallery',
         'fbl-gallery-builder',
-        'fbl_gallery_builder_page',
-        'dashicons-format-gallery',
-        32
+        'fbl_gallery_builder_page'
     );
 });
 
@@ -38,7 +36,7 @@ add_action('admin_menu', function() {
    preview looks close to the real thing
    --------------------------------------------------------- */
 add_action('admin_enqueue_scripts', function($hook) {
-    if ($hook !== 'toplevel_page_fbl-gallery-builder') return;
+    if ($hook !== 'media_page_fbl-gallery-builder') return;
 
     wp_enqueue_style(
         'fbl-gallery',
@@ -294,8 +292,14 @@ function fbl_gallery_builder_page() {
          LEFT JOIN {$wpdb->posts} p ON p.ID = fa.attachment_id
               AND p.post_type = 'attachment'
               AND p.post_mime_type LIKE 'image/%'
-         GROUP BY f.id, f.name
-         ORDER BY f.name ASC"
+              GROUP BY f.id, f.name
+         ORDER BY
+            CASE
+                WHEN f.name LIKE 'WEB\_%' THEN 0
+                WHEN f.name LIKE '%\_FBL'  THEN 1
+                ELSE 2
+            END,
+            f.name ASC"
     );
 
     // Registered image sizes
