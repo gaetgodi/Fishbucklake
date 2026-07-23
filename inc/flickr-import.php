@@ -4,17 +4,17 @@
    Upload a Flickr album .zip -> extract -> resize -> import into
    the Media Library -> assign to a new "<Album>_FBL" FileBird folder.
 
+   - Chunked upload: the browser sends 5 MB pieces, so nginx's
+     client_max_body_size is never hit regardless of album size.
    - Resize only (no crop). Images are pre-cropped in Flickr.
-   - Resizing uses ImageMagick `convert` as a subprocess, so PHP's
-     memory_limit does not constrain large camera JPEGs.
-   - Processing is BATCHED over repeated AJAX calls so large albums
+   - Resizing uses the Imagick extension when available, GD otherwise.
+   - Importing is BATCHED over repeated AJAX calls so large albums
      do not hit an execution timeout.
-   - Folder name is derived from the zip's inner top directory if there
-     is exactly one, else from the zip filename; "_FBL" is appended.
-     Collisions get a sequence inserted BEFORE the suffix
-     ("Album-2_FBL") so the _FBL ending stays intact.
-   - Zip-slip protection: entries containing .. or absolute paths are
-     rejected. Non-image entries are skipped.
+   - Folder name comes from the zip's inner top directory if there is
+     exactly one, else the zip filename; "_FBL" is appended. Collisions
+     get a sequence BEFORE the suffix ("Album-2_FBL").
+   - Zip-slip protection: entries with .. or absolute paths are rejected.
+     Non-image entries are skipped.
 
    Admin page: Media > Flickr Import
    ========================================================= */
@@ -40,13 +40,12 @@ add_action('admin_menu', function () {
    Helpers
    --------------------------------------------------------- */
 
-// Working directory for extraction (outside the web-served uploads tree).
+// Working directory for extraction.
 function fbl_fi_workdir() {
     $up = wp_upload_dir();
     $dir = trailingslashit($up['basedir']) . '_fbl_import';
     if (!file_exists($dir)) {
         wp_mkdir_p($dir);
-        // keep it private
         @file_put_contents($dir . '/.htaccess', "Deny from all\n");
         @file_put_contents($dir . '/index.html', '');
     }
@@ -60,7 +59,6 @@ function fbl_fi_folder_id($name) {
     ));
 }
 
-// Create root folder; return id.
 function fbl_fi_create_folder($name) {
     global $wpdb;
     $wpdb->insert(
@@ -95,9 +93,9 @@ function fbl_fi_is_image_name($name) {
 
 // Reject zip-slip and junk entries.
 function fbl_fi_safe_entry($name) {
-    if ($name === '' ) return false;
+    if ($name === '') return false;
     if (strpos($name, '..') !== false) return false;
-    if (substr($name, 0, 1) === '/')   return false;
+    if (substr($name, 0, 1) === '/') return false;
     if (strpos($name, '__MACOSX') === 0) return false;
     if (strpos(basename($name), '._') === 0) return false;
     return true;
@@ -107,107 +105,9 @@ function fbl_fi_flush_gallery_cache() {
     if (function_exists('fbl_gallery_flush_cache')) fbl_gallery_flush_cache();
 }
 
-/* ---------------------------------------------------------
-   Admin page
-   --------------------------------------------------------- */
-function fbl_flickr_import_page() {
-    if (!current_user_can('upload_files')) return;
-    $nonce    = wp_create_nonce('fbl_flickr_import');
-    $max      = size_format(wp_max_upload_size());
-    $has_conv = extension_loaded('imagick') || extension_loaded('gd');
-    $has_zip  = class_exists('ZipArchive');
-    ?>
-    <div class="wrap fbl-fi">
-        <h1>Flickr Import</h1>
-        <p class="description">
-            Upload a Flickr album <code>.zip</code>. Images are resized (not cropped),
-            added to the Media Library, and placed in a new FileBird folder named after
-            the album with <code>_FBL</code> appended. Crop your images in Flickr before downloading.
-        </p>
-
-        <?php if (!$has_zip): ?>
-            <div class="notice notice-error"><p>PHP ZipArchive is not available — this tool cannot run.</p></div>
-        <?php endif; ?>
-        <?php if (!$has_conv): ?>
-            <div class="notice notice-error"><p>Neither the Imagick nor GD PHP extension is available — images cannot be resized.</p></div>
-        <?php elseif (!extension_loaded('imagick')): ?>
-            <div class="notice notice-warning"><p>Imagick not available; using GD. Very large images may fail on this server's memory limit.</p></div>
-        <?php endif; ?>
-
-        <table class="form-table" role="presentation">
-            <tr>
-                <th scope="row"><label for="fbl-fi-file">Album zip</label></th>
-                <td>
-                    <input type="file" id="fbl-fi-file" accept=".zip,application/zip">
-                    <p class="description">Maximum upload size on this server: <strong><?php echo esc_html($max); ?></strong></p>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><label for="fbl-fi-maxedge">Resize longest edge</label></th>
-                <td>
-                    <input type="number" id="fbl-fi-maxedge" value="2000" min="400" max="6000" step="100" style="width:110px;"> px
-                    <p class="description">Images larger than this are scaled down. Smaller images are left alone.</p>
-                </td>
-            </tr>
-            <tr>
-                <th scope="row"><label for="fbl-fi-quality">JPEG quality</label></th>
-                <td>
-                    <input type="number" id="fbl-fi-quality" value="88" min="60" max="100" step="1" style="width:80px;">
-                    <p class="description">88 is a good balance of quality and file size.</p>
-                </td>
-            </tr>
-        </table>
-
-        <p>
-            <button type="button" class="button button-primary" id="fbl-fi-upload">Upload and inspect</button>
-            <span id="fbl-fi-status" class="fbl-fi-status"></span>
-        </p>
-
-        <div id="fbl-fi-stage2" style="display:none; background:#fff; border:1px solid #c3c4c7; padding:1rem; max-width:720px;">
-            <h2 style="margin-top:0;">Ready to import</h2>
-            <p id="fbl-fi-summary"></p>
-            <p>
-                <label><strong>Destination folder:</strong><br>
-                    <input type="text" id="fbl-fi-folder" size="46">
-                </label>
-                <br><span class="description">Pre-filled from the album name. Edit if you like — it is created if it does not exist.</span>
-            </p>
-            <p>
-                <button type="button" class="button button-primary" id="fbl-fi-start">Start import</button>
-                <button type="button" class="button" id="fbl-fi-cancel">Cancel</button>
-            </p>
-            <div id="fbl-fi-progress-wrap" style="display:none;">
-                <div class="fbl-fi-bar"><div class="fbl-fi-bar-fill" id="fbl-fi-bar"></div></div>
-                <p id="fbl-fi-progress-text"></p>
-                <div id="fbl-fi-log" class="fbl-fi-log"></div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-    window.FBL_FI = {
-        ajax:  <?php echo json_encode(admin_url('admin-ajax.php')); ?>,
-        nonce: <?php echo json_encode($nonce); ?>,
-        batch: <?php echo (int) FBL_FI_BATCH; ?>
-    };
-    </script>
-    <?php
-}
-
-/* ---------------------------------------------------------
-   Enqueue
-   --------------------------------------------------------- */
-add_action('admin_enqueue_scripts', function ($hook) {
-    if ($hook !== 'media_page_fbl-flickr-import') return;
-    $theme = get_stylesheet_directory_uri();
-    $ver   = wp_get_theme()->get('Version');
-    wp_enqueue_style('fbl-flickr-import', $theme . '/css/flickr-import.css', array(), $ver);
-    wp_enqueue_script('fbl-flickr-import', $theme . '/js/flickr-import.js', array(), $ver, true);
-});
 /**
  * Resize an image in place to fit within $maxedge on its longest side.
  * Uses Imagick when available, GD otherwise. Returns true or an error string.
- * Images already smaller than $maxedge are left untouched (but still oriented).
  */
 function fbl_fi_resize($path, $maxedge, $quality) {
     if (extension_loaded('imagick')) {
@@ -217,13 +117,12 @@ function fbl_fi_resize($path, $maxedge, $quality) {
             $w = $im->getImageWidth();
             $h = $im->getImageHeight();
             if ($w > $maxedge || $h > $maxedge) {
-                // bestfit: scales so neither side exceeds $maxedge
                 $im->resizeImage($maxedge, $maxedge, Imagick::FILTER_LANCZOS, 1, true);
             }
             if (strtolower($im->getImageFormat()) === 'jpeg') {
                 $im->setImageCompressionQuality($quality);
             }
-            $im->stripImage();               // drop bulky EXIF/thumbnails
+            $im->stripImage();
             $im->writeImage($path);
             $im->clear();
             $im->destroy();
@@ -235,12 +134,11 @@ function fbl_fi_resize($path, $maxedge, $quality) {
 
     if (!extension_loaded('gd')) return 'no imagick or gd';
 
-    // --- GD fallback via WordPress' own image editor
     $editor = wp_get_image_editor($path);
     if (is_wp_error($editor)) return 'gd: ' . $editor->get_error_message();
     $size = $editor->get_size();
     if ($size['width'] > $maxedge || $size['height'] > $maxedge) {
-        $r = $editor->resize($maxedge, $maxedge, false);   // false = no crop
+        $r = $editor->resize($maxedge, $maxedge, false);
         if (is_wp_error($r)) return 'gd: ' . $r->get_error_message();
     }
     $editor->set_quality($quality);
@@ -248,71 +146,10 @@ function fbl_fi_resize($path, $maxedge, $quality) {
     if (is_wp_error($saved)) return 'gd: ' . $saved->get_error_message();
     return true;
 }
-# Flickr Import — chunked upload
-
-Splits the zip client-side into 5 MB chunks so nginx's `client_max_body_size`
-(128 MB on this vhost) is never hit, no matter how large the album. Also gives
-a real upload progress bar and lets a failed chunk retry without restarting.
-
-Two edits: one new AJAX handler in the PHP, and a replacement JS file.
-
----
-
-## EDIT 1 — PHP: add the chunk-receiver
-
-Open `inc/flickr-import.php`. Paste this block **just above** the
-`/* AJAX 1: receive the zip ... */` comment:
-
-```php
-/* ---------------------------------------------------------
-   AJAX 0: receive one chunk of the zip.
-   The browser slices the file; we append each piece in order.
-   On the final chunk the assembled zip is handed to the same
-   extraction routine the single-shot upload uses.
-   --------------------------------------------------------- */
-add_action('wp_ajax_fbl_fi_chunk', function () {
-    check_ajax_referer('fbl_flickr_import', 'nonce');
-    if (!current_user_can('upload_files')) wp_send_json_error('forbidden');
-
-    $uid   = isset($_POST['uid'])   ? preg_replace('/[^a-zA-Z0-9]/', '', wp_unslash($_POST['uid'])) : '';
-    $index = isset($_POST['index']) ? (int) $_POST['index'] : -1;
-    $total = isset($_POST['total']) ? (int) $_POST['total'] : 0;
-    $name  = isset($_POST['name'])  ? sanitize_file_name(wp_unslash($_POST['name'])) : 'album.zip';
-
-    if ($uid === '' || $index < 0 || $total < 1) wp_send_json_error('bad chunk request');
-    if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
-        wp_send_json_error('chunk upload error');
-    }
-
-    $dir  = trailingslashit(fbl_fi_workdir()) . 'chunks';
-    if (!file_exists($dir)) wp_mkdir_p($dir);
-    $part = $dir . '/' . $uid . '.part';
-
-    // first chunk starts a fresh file
-    $mode = ($index === 0) ? 'wb' : 'ab';
-    $in   = fopen($_FILES['chunk']['tmp_name'], 'rb');
-    $out  = fopen($part, $mode);
-    if (!$in || !$out) wp_send_json_error('could not write chunk');
-    stream_copy_to_stream($in, $out);
-    fclose($in);
-    fclose($out);
-
-    if ($index + 1 < $total) {
-        wp_send_json_success(array('received' => $index + 1, 'total' => $total, 'complete' => false));
-    }
-
-    // final chunk -> extract
-    $res = fbl_fi_extract_zip($part, $name);
-    @unlink($part);
-
-    if (is_string($res)) wp_send_json_error($res);
-    $res['complete'] = true;
-    wp_send_json_success($res);
-});
 
 /**
  * Extract a zip of images into a session dir and return a manifest array,
- * or an error string. Shared by the chunked and single-shot upload paths.
+ * or an error string.
  */
 function fbl_fi_extract_zip($zippath, $origname) {
     if (!class_exists('ZipArchive')) return 'ZipArchive not available';
@@ -387,121 +224,147 @@ function fbl_fi_extract_zip($zippath, $origname) {
         'folder'  => fbl_fi_unique_folder_name($album),
     );
 }
-```
-
----
-
-## EDIT 2 — JS: replace `js/flickr-import.js` entirely
-
-Overwrite the file with the version supplied alongside this note
-(`flickr-import.js`). It uploads in 5 MB chunks with a progress bar,
-then hands off to the same batched import as before.
-
----
-
-## Note on the old single-shot handler
-
-The original `wp_ajax_fbl_fi_upload` handler can stay — it is simply no longer
-called by the JS. Leaving it costs nothing and keeps a fallback path available.
 
 /* ---------------------------------------------------------
-   AJAX 1: receive the zip, extract, build a manifest
+   Admin page
    --------------------------------------------------------- */
-add_action('wp_ajax_fbl_fi_upload', function () {
-    check_ajax_referer('fbl_flickr_import', 'nonce');
-    if (!current_user_can('upload_files')) wp_send_json_error('forbidden');
-    if (!class_exists('ZipArchive'))       wp_send_json_error('ZipArchive not available');
+function fbl_flickr_import_page() {
+    if (!current_user_can('upload_files')) return;
+    $nonce   = wp_create_nonce('fbl_flickr_import');
+    $has_img = extension_loaded('imagick') || extension_loaded('gd');
+    $has_zip = class_exists('ZipArchive');
+    ?>
+    <div class="wrap fbl-fi">
+        <h1>Flickr Import</h1>
+        <p class="description">
+            Upload a Flickr album <code>.zip</code>. Images are resized (not cropped),
+            added to the Media Library, and placed in a new FileBird folder named after
+            the album with <code>_FBL</code> appended. Crop your images in Flickr before downloading.
+        </p>
 
-    if (empty($_FILES['zipfile']) || $_FILES['zipfile']['error'] !== UPLOAD_ERR_OK) {
-        wp_send_json_error('upload failed (check file size against the server limit)');
-    }
+        <?php if (!$has_zip): ?>
+            <div class="notice notice-error"><p>PHP ZipArchive is not available — this tool cannot run.</p></div>
+        <?php endif; ?>
+        <?php if (!$has_img): ?>
+            <div class="notice notice-error"><p>Neither the Imagick nor GD PHP extension is available — images cannot be resized.</p></div>
+        <?php elseif (!extension_loaded('imagick')): ?>
+            <div class="notice notice-warning"><p>Imagick not available; using GD. Very large images may fail on this server's memory limit.</p></div>
+        <?php endif; ?>
 
-    $tmp  = $_FILES['zipfile']['tmp_name'];
-    $orig = sanitize_file_name($_FILES['zipfile']['name']);
+        <table class="form-table" role="presentation">
+            <tr>
+                <th scope="row"><label for="fbl-fi-file">Album zip</label></th>
+                <td>
+                    <input type="file" id="fbl-fi-file" accept=".zip,application/zip">
+                    <p class="description">Uploaded in 5&nbsp;MB pieces, so album size is not limited by server upload settings.</p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="fbl-fi-maxedge">Resize longest edge</label></th>
+                <td>
+                    <input type="number" id="fbl-fi-maxedge" value="2000" min="400" max="6000" step="100" style="width:110px;"> px
+                    <p class="description">Images larger than this are scaled down. Smaller images are left alone.</p>
+                </td>
+            </tr>
+            <tr>
+                <th scope="row"><label for="fbl-fi-quality">JPEG quality</label></th>
+                <td>
+                    <input type="number" id="fbl-fi-quality" value="88" min="60" max="100" step="1" style="width:80px;">
+                    <p class="description">88 is a good balance of quality and file size.</p>
+                </td>
+            </tr>
+        </table>
 
-    $zip = new ZipArchive();
-    if ($zip->open($tmp) !== true) wp_send_json_error('could not open zip');
+        <p>
+            <button type="button" class="button button-primary" id="fbl-fi-upload">Upload and inspect</button>
+            <span id="fbl-fi-status" class="fbl-fi-status"></span>
+        </p>
 
-    // unique session dir
-    $session = 'imp_' . wp_generate_password(8, false, false);
-    $dest    = trailingslashit(fbl_fi_workdir()) . $session;
-    wp_mkdir_p($dest);
+        <div id="fbl-fi-stage2" style="display:none; background:#fff; border:1px solid #c3c4c7; padding:1rem; max-width:720px;">
+            <h2 style="margin-top:0;">Ready to import</h2>
+            <p id="fbl-fi-summary"></p>
+            <p>
+                <label><strong>Destination folder:</strong><br>
+                    <input type="text" id="fbl-fi-folder" size="46">
+                </label>
+                <br><span class="description">Pre-filled from the album name. Edit if you like — it is created if it does not exist.</span>
+            </p>
+            <p>
+                <button type="button" class="button button-primary" id="fbl-fi-start">Start import</button>
+                <button type="button" class="button" id="fbl-fi-cancel">Cancel</button>
+            </p>
+            <div id="fbl-fi-progress-wrap" style="display:none;">
+                <div class="fbl-fi-bar"><div class="fbl-fi-bar-fill" id="fbl-fi-bar"></div></div>
+                <p id="fbl-fi-progress-text"></p>
+                <div id="fbl-fi-log" class="fbl-fi-log"></div>
+            </div>
+        </div>
+    </div>
 
-    $files    = array();
-    $topdirs  = array();
-    $skipped  = 0;
+    <script>
+    window.FBL_FI = {
+        ajax:  <?php echo json_encode(admin_url('admin-ajax.php')); ?>,
+        nonce: <?php echo json_encode($nonce); ?>,
+        batch: <?php echo (int) FBL_FI_BATCH; ?>
+    };
+    </script>
+    <?php
+}
 
-    for ($i = 0; $i < $zip->numFiles; $i++) {
-        $entry = $zip->getNameIndex($i);
-        if (!fbl_fi_safe_entry($entry)) { $skipped++; continue; }
-        if (substr($entry, -1) === '/') {                 // directory entry
-            $parts = explode('/', trim($entry, '/'));
-            if (count($parts) >= 1 && $parts[0] !== '') $topdirs[$parts[0]] = true;
-            continue;
-        }
-        if (!fbl_fi_is_image_name($entry)) { $skipped++; continue; }
-
-        // note the top-level dir for album-name detection
-        if (strpos($entry, '/') !== false) {
-            $parts = explode('/', $entry);
-            $topdirs[$parts[0]] = true;
-        }
-
-        $target = $dest . '/' . basename($entry);
-        // avoid collisions between same-named files in different subdirs
-        $n = 1;
-        while (file_exists($target)) {
-            $target = $dest . '/' . pathinfo(basename($entry), PATHINFO_FILENAME)
-                    . '-' . $n . '.' . pathinfo($entry, PATHINFO_EXTENSION);
-            $n++;
-        }
-
-        $stream = $zip->getStream($entry);
-        if (!$stream) { $skipped++; continue; }
-        $out = fopen($target, 'wb');
-        if ($out) {
-            stream_copy_to_stream($stream, $out);
-            fclose($out);
-            $files[] = basename($target);
-        } else {
-            $skipped++;
-        }
-        fclose($stream);
-    }
-    $zip->close();
-
-    if (empty($files)) {
-        wp_send_json_error('no images found in that zip');
-    }
-
-    // album name: single inner top dir, else the zip filename
-    $album = '';
-    $tops  = array_keys($topdirs);
-    if (count($tops) === 1) {
-        $album = $tops[0];
-    }
-    if ($album === '') {
-        $album = pathinfo($orig, PATHINFO_FILENAME);
-    }
-    $album = str_replace(array('_', '-'), ' ', $album);
-    $album = trim(preg_replace('/\s+/', ' ', $album));
-
-    set_transient('fbl_fi_' . $session, array(
-        'dir'   => $dest,
-        'files' => $files,
-    ), 6 * HOUR_IN_SECONDS);
-
-    wp_send_json_success(array(
-        'session' => $session,
-        'count'   => count($files),
-        'skipped' => $skipped,
-        'album'   => $album,
-        'folder'  => fbl_fi_unique_folder_name($album),
-    ));
+/* ---------------------------------------------------------
+   Enqueue
+   --------------------------------------------------------- */
+add_action('admin_enqueue_scripts', function ($hook) {
+    if ($hook !== 'media_page_fbl-flickr-import') return;
+    $theme = get_stylesheet_directory_uri();
+    $ver   = wp_get_theme()->get('Version');
+    wp_enqueue_style('fbl-flickr-import', $theme . '/css/flickr-import.css', array(), $ver);
+    wp_enqueue_script('fbl-flickr-import', $theme . '/js/flickr-import.js', array(), $ver, true);
 });
 
 /* ---------------------------------------------------------
-   AJAX 2: process one batch
+   AJAX: receive one chunk of the zip
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_fi_chunk', function () {
+    check_ajax_referer('fbl_flickr_import', 'nonce');
+    if (!current_user_can('upload_files')) wp_send_json_error('forbidden');
+
+    $uid   = isset($_POST['uid'])   ? preg_replace('/[^a-zA-Z0-9]/', '', wp_unslash($_POST['uid'])) : '';
+    $index = isset($_POST['index']) ? (int) $_POST['index'] : -1;
+    $total = isset($_POST['total']) ? (int) $_POST['total'] : 0;
+    $name  = isset($_POST['name'])  ? sanitize_file_name(wp_unslash($_POST['name'])) : 'album.zip';
+
+    if ($uid === '' || $index < 0 || $total < 1) wp_send_json_error('bad chunk request');
+    if (empty($_FILES['chunk']) || $_FILES['chunk']['error'] !== UPLOAD_ERR_OK) {
+        wp_send_json_error('chunk upload error');
+    }
+
+    $dir = trailingslashit(fbl_fi_workdir()) . 'chunks';
+    if (!file_exists($dir)) wp_mkdir_p($dir);
+    $part = $dir . '/' . $uid . '.part';
+
+    $mode = ($index === 0) ? 'wb' : 'ab';
+    $in   = fopen($_FILES['chunk']['tmp_name'], 'rb');
+    $out  = fopen($part, $mode);
+    if (!$in || !$out) wp_send_json_error('could not write chunk');
+    stream_copy_to_stream($in, $out);
+    fclose($in);
+    fclose($out);
+
+    if ($index + 1 < $total) {
+        wp_send_json_success(array('received' => $index + 1, 'total' => $total, 'complete' => false));
+    }
+
+    $res = fbl_fi_extract_zip($part, $name);
+    @unlink($part);
+
+    if (is_string($res)) wp_send_json_error($res);
+    $res['complete'] = true;
+    wp_send_json_success($res);
+});
+
+/* ---------------------------------------------------------
+   AJAX: process one batch of images
    --------------------------------------------------------- */
 add_action('wp_ajax_fbl_fi_batch', function () {
     check_ajax_referer('fbl_flickr_import', 'nonce');
@@ -517,7 +380,6 @@ add_action('wp_ajax_fbl_fi_batch', function () {
     if (!$state || empty($state['files'])) wp_send_json_error('session expired — re-upload the zip');
     if ($folder === '') wp_send_json_error('no destination folder');
 
-    // resolve / create the folder once
     $fid = fbl_fi_folder_id($folder);
     if (!$fid) $fid = fbl_fi_create_folder($folder);
     if (!$fid) wp_send_json_error('could not create folder');
@@ -537,16 +399,17 @@ add_action('wp_ajax_fbl_fi_batch', function () {
 
     foreach ($slice as $fname) {
         $src = trailingslashit($state['dir']) . $fname;
-        if (!file_exists($src)) { $log[] = array('file' => $fname, 'ok' => false, 'msg' => 'missing'); continue; }
+        if (!file_exists($src)) {
+            $log[] = array('file' => $fname, 'ok' => false, 'msg' => 'missing');
+            continue;
+        }
 
-        // ---- resize in place (Imagick preferred, GD fallback)
         $rsz = fbl_fi_resize($src, $maxedge, $quality);
         if ($rsz !== true) {
             $log[] = array('file' => $fname, 'ok' => false, 'msg' => 'resize failed: ' . $rsz);
             continue;
         }
 
-        // ---- import into the media library
         $upload = wp_upload_bits($fname, null, file_get_contents($src));
         if (!empty($upload['error'])) {
             $log[] = array('file' => $fname, 'ok' => false, 'msg' => $upload['error']);
@@ -569,13 +432,12 @@ add_action('wp_ajax_fbl_fi_batch', function () {
         $meta = wp_generate_attachment_metadata($attach_id, $upload['file']);
         wp_update_attachment_metadata($attach_id, $meta);
 
-        // ---- assign to the FileBird folder
         $wpdb->query($wpdb->prepare(
             "INSERT IGNORE INTO {$table} (folder_id, attachment_id) VALUES (%d, %d)",
             $fid, $attach_id
         ));
 
-        @unlink($src); // tidy as we go
+        @unlink($src);
         $done++;
         $log[] = array('file' => $fname, 'ok' => true, 'msg' => 'imported');
     }
@@ -584,7 +446,6 @@ add_action('wp_ajax_fbl_fi_batch', function () {
     $finished = ($next >= $total);
 
     if ($finished) {
-        // clean up the extraction dir and the session
         $dir = $state['dir'];
         if (is_dir($dir)) {
             foreach (glob($dir . '/*') as $leftover) @unlink($leftover);
