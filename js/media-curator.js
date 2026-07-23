@@ -123,12 +123,21 @@
         img.src = it.thumb || '';
         img.alt = '';
         img.className = 'fbl-curator-thumb';
+        img.title = 'Click to select';
         if (it.large) {
             img.dataset.large = it.large;
             img.addEventListener('mouseenter', showHover);
             img.addEventListener('mousemove', moveHover);
             img.addEventListener('mouseleave', hideHover);
         }
+        // click the thumbnail to toggle this row's Select checkbox
+        img.addEventListener('click', function () {
+            var cb = $('.fbl-curator-select', tr);
+            if (!cb) return;
+            cb.checked = !cb.checked;
+            syncRowSelected(tr);
+            if (!cb.checked && els.selectall) els.selectall.checked = false;
+        });
         tdImg.appendChild(img);
         var fn = document.createElement('div');
         fn.className = 'fbl-curator-fn';
@@ -152,6 +161,8 @@
         var sel = document.createElement('input');
         sel.type = 'checkbox';
         sel.className = 'fbl-curator-select';
+        // keep the row highlight in sync when the box itself is clicked
+        sel.addEventListener('change', function () { syncRowSelected(tr); });
         tdSel.appendChild(sel);
         tr.appendChild(tdSel);
 
@@ -165,6 +176,13 @@
         tr.appendChild(tdCopy);
 
         return tr;
+    }
+
+    // add/remove the highlight class to match the Select checkbox
+    function syncRowSelected(tr) {
+        var cb = $('.fbl-curator-select', tr);
+        if (!cb) return;
+        tr.classList.toggle('is-selected', cb.checked);
     }
 
     function fieldCell(id, field, value, suggestion) {
@@ -224,7 +242,11 @@
     }
 
     function toggleColumn(sel, on) {
-        $all(sel, els.rows).forEach(function (cb) { cb.checked = on; });
+        $all(sel, els.rows).forEach(function (cb) {
+            cb.checked = on;
+            var tr = cb.closest('tr');
+            if (tr && cb.classList.contains('fbl-curator-select')) syncRowSelected(tr);
+        });
     }
 
     function resort() {
@@ -371,7 +393,10 @@
         ajax('fbl_curator_copyweb', { ids: ids, target: target }).then(function (res) {
             els.batchcopy.disabled = false;
             if (!res.success) { els.status.textContent = 'error: ' + (res.data || 'failed'); return; }
-            selected.forEach(function (r) { $('.fbl-curator-select', r).checked = false; });
+            selected.forEach(function (r) {
+                $('.fbl-curator-select', r).checked = false;
+                syncRowSelected(r);
+            });
             if (els.selectall) els.selectall.checked = false;
             maybeAddFolder(res.data);
             els.status.textContent = 'Copied ' + res.data.copied + ' to ' + res.data.target +
@@ -399,19 +424,18 @@
             els.remove.disabled = false;
             if (!res.success) { els.status.textContent = 'error: ' + (res.data || 'failed'); return; }
 
-            // drop the successfully-removed rows from the table
             var keptSet = {};
             (res.data.kept_ids || []).forEach(function (id) { keptSet[String(id)] = true; });
             selected.forEach(function (r) {
                 if (!keptSet[r.dataset.id]) {
                     r.parentNode.removeChild(r);
                 } else {
-                    $('.fbl-curator-select', r).checked = false; // kept: just deselect
+                    $('.fbl-curator-select', r).checked = false;
+                    syncRowSelected(r);
                 }
             });
             if (els.selectall) els.selectall.checked = false;
 
-            // update the visible image count for this folder
             els.count.textContent = res.data.new_count + ' image' + (res.data.new_count === 1 ? '' : 's');
             updateOptionCount(currentFolder, res.data.new_count);
             addSuggestFolder(currentFolder, res.data.new_count);

@@ -190,3 +190,25 @@
 .fbl-curator-remove:disabled {
     opacity: 0.6;
 }
+/* ===== APPEND to css/media-curator.css ===== */
+/* Click-to-select: pointer cursor on thumbnails + selected-row highlight */
+
+/* thumbnails are now clickable (this overrides the earlier zoom-in cursor) */
+.fbl-curator-thumb {
+    cursor: pointer;
+}
+
+/* selected row highlight — works alongside .striped rows */
+.fbl-curator-table tbody tr.is-selected,
+.fbl-curator-table tbody tr.is-selected:nth-child(odd) {
+    background: #e6f0f7;
+}
+
+.fbl-curator-table tbody tr.is-selected td:first-child {
+    box-shadow: inset 3px 0 0 #2271b1;
+}
+
+.fbl-curator-table tbody tr.is-selected .fbl-curator-thumb {
+    outline: 2px solid #2271b1;
+    outline-offset: 1px;
+}
