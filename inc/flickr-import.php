@@ -114,7 +114,7 @@ function fbl_flickr_import_page() {
     if (!current_user_can('upload_files')) return;
     $nonce    = wp_create_nonce('fbl_flickr_import');
     $max      = size_format(wp_max_upload_size());
-    $has_conv = (bool) @is_executable('/usr/bin/convert');
+    $has_conv = extension_loaded('imagick') || extension_loaded('gd');
     $has_zip  = class_exists('ZipArchive');
     ?>
     <div class="wrap fbl-fi">
@@ -129,7 +129,9 @@ function fbl_flickr_import_page() {
             <div class="notice notice-error"><p>PHP ZipArchive is not available — this tool cannot run.</p></div>
         <?php endif; ?>
         <?php if (!$has_conv): ?>
-            <div class="notice notice-warning"><p>ImageMagick <code>convert</code> not found at /usr/bin/convert — resizing will fall back to PHP and may fail on very large images.</p></div>
+            <div class="notice notice-error"><p>Neither the Imagick nor GD PHP extension is available — images cannot be resized.</p></div>
+        <?php elseif (!extension_loaded('imagick')): ?>
+            <div class="notice notice-warning"><p>Imagick not available; using GD. Very large images may fail on this server's memory limit.</p></div>
         <?php endif; ?>
 
         <table class="form-table" role="presentation">
@@ -202,6 +204,50 @@ add_action('admin_enqueue_scripts', function ($hook) {
     wp_enqueue_style('fbl-flickr-import', $theme . '/css/flickr-import.css', array(), $ver);
     wp_enqueue_script('fbl-flickr-import', $theme . '/js/flickr-import.js', array(), $ver, true);
 });
+/**
+ * Resize an image in place to fit within $maxedge on its longest side.
+ * Uses Imagick when available, GD otherwise. Returns true or an error string.
+ * Images already smaller than $maxedge are left untouched (but still oriented).
+ */
+function fbl_fi_resize($path, $maxedge, $quality) {
+    if (extension_loaded('imagick')) {
+        try {
+            $im = new Imagick($path);
+            $im->autoOrient();
+            $w = $im->getImageWidth();
+            $h = $im->getImageHeight();
+            if ($w > $maxedge || $h > $maxedge) {
+                // bestfit: scales so neither side exceeds $maxedge
+                $im->resizeImage($maxedge, $maxedge, Imagick::FILTER_LANCZOS, 1, true);
+            }
+            if (strtolower($im->getImageFormat()) === 'jpeg') {
+                $im->setImageCompressionQuality($quality);
+            }
+            $im->stripImage();               // drop bulky EXIF/thumbnails
+            $im->writeImage($path);
+            $im->clear();
+            $im->destroy();
+            return true;
+        } catch (Exception $e) {
+            return 'imagick: ' . $e->getMessage();
+        }
+    }
+
+    if (!extension_loaded('gd')) return 'no imagick or gd';
+
+    // --- GD fallback via WordPress' own image editor
+    $editor = wp_get_image_editor($path);
+    if (is_wp_error($editor)) return 'gd: ' . $editor->get_error_message();
+    $size = $editor->get_size();
+    if ($size['width'] > $maxedge || $size['height'] > $maxedge) {
+        $r = $editor->resize($maxedge, $maxedge, false);   // false = no crop
+        if (is_wp_error($r)) return 'gd: ' . $r->get_error_message();
+    }
+    $editor->set_quality($quality);
+    $saved = $editor->save($path);
+    if (is_wp_error($saved)) return 'gd: ' . $saved->get_error_message();
+    return true;
+}
 
 /* ---------------------------------------------------------
    AJAX 1: receive the zip, extract, build a manifest
@@ -338,17 +384,11 @@ add_action('wp_ajax_fbl_fi_batch', function () {
         $src = trailingslashit($state['dir']) . $fname;
         if (!file_exists($src)) { $log[] = array('file' => $fname, 'ok' => false, 'msg' => 'missing'); continue; }
 
-        // ---- resize in place with ImageMagick (subprocess: no PHP memory pressure)
-        if (@is_executable('/usr/bin/convert')) {
-            $cmd = sprintf(
-                '/usr/bin/convert %s -auto-orient -resize %dx%d\> -quality %d %s 2>&1',
-                escapeshellarg($src), $maxedge, $maxedge, $quality, escapeshellarg($src)
-            );
-            @exec($cmd, $out, $rc);
-            if ($rc !== 0) {
-                $log[] = array('file' => $fname, 'ok' => false, 'msg' => 'resize failed');
-                continue;
-            }
+        // ---- resize in place (Imagick preferred, GD fallback)
+        $rsz = fbl_fi_resize($src, $maxedge, $quality);
+        if ($rsz !== true) {
+            $log[] = array('file' => $fname, 'ok' => false, 'msg' => 'resize failed: ' . $rsz);
+            continue;
         }
 
         // ---- import into the media library
