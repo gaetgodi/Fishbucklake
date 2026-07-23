@@ -121,12 +121,12 @@
         padding: 1.5rem;
         max-width: 95%;
     }
-    
+
     .fbl-catch-title {
         font-size: 1.5rem;
         padding-right: 2rem;
     }
-    
+
     .fbl-catch-close {
         font-size: 1.5rem;
     }
@@ -136,7 +136,7 @@
     .fbl-catch-content {
         padding: 1rem;
     }
-    
+
     .fbl-catch-title {
         font-size: 1.3rem;
     }
@@ -175,7 +175,7 @@
     color: var(--fbl-gold);
 }
 
-/* Gallery grid */
+/* Gallery grid (default view) */
 .fbl-catch-gallery-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -189,8 +189,7 @@
     overflow: hidden;
     border-radius: var(--fbl-radius);
     background: var(--fbl-mid);
- /*   aspect-ratio: 16 / 9; */
-
+ /* aspect-ratio: 16 / 9; */
 }
 
 .fbl-catch-gallery-link {
@@ -207,7 +206,7 @@
     object-fit: cover;
     display: block;
     transition: transform 0.3s ease;
- }
+}
 
 .fbl-catch-gallery-link:hover .fbl-catch-gallery-image {
     transform: scale(1.05);
@@ -243,13 +242,13 @@
     font-size: 0.9rem;
 }
 
-/* Responsive */
+/* Responsive (grid view) */
 @media (max-width: 980px) {
     .fbl-catch-gallery-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
     }
-    
+
     .fbl-catch-gallery-title {
         font-size: 2rem;
     }
@@ -260,16 +259,56 @@
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .fbl-catch-gallery-title {
         font-size: 1.75rem;
     }
-    
+
     .fbl-catch-gallery-header {
         margin-bottom: 2rem;
         padding-bottom: 1.5rem;
     }
 }
+
+/* =========================================================
+   MASONRY VIEW  [catch_gallery view="masonry"]
+   Columns are built by JS so the newest day reads left-to-right
+   across the top row. Images keep their natural aspect (no crop).
+   ========================================================= */
+
+.fbl-catch-gallery-grid.fbl-catch-gallery--masonry {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+.fbl-catch-masonry-col {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.fbl-catch-gallery--masonry .fbl-catch-gallery-item {
+    aspect-ratio: auto;
+}
+
+.fbl-catch-gallery--masonry .fbl-catch-gallery-image {
+    height: auto;          /* natural height — nothing cropped */
+    object-fit: initial;
+}
+
+@media (max-width: 640px) {
+    .fbl-catch-gallery-grid.fbl-catch-gallery--masonry {
+        gap: 1rem;
+    }
+
+    .fbl-catch-masonry-col {
+        gap: 1rem;
+    }
+}
+
 /* =========================================================
    FANCYBOX Z-INDEX FIX FOR DIVI 5
    ========================================================= */
@@ -290,4 +329,3 @@
 .fancybox__toolbar {
     z-index: 10000000 !important;
 }
-

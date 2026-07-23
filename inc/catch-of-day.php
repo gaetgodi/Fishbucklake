@@ -50,8 +50,8 @@ function fbl_catch_folders() {
 
     usort($rows, function ($a, $b) {
         $rank = function ($n) {
-            if (strpos($n, 'WEB_') === 0)     return 0;
-            if (substr($n, -4) === '_FBL')    return 1;
+            if (strpos($n, 'WEB_') === 0)  return 0;
+            if (substr($n, -4) === '_FBL') return 1;
             return 2;
         };
         $ra = $rank($a->name);
@@ -125,7 +125,6 @@ function fbl_catch_make_day_image($src, $dest, $maxw, $quality) {
     $saved = $editor->save($dest, 'image/jpeg');
     if (is_wp_error($saved)) { @unlink($dest); return 'gd: ' . $saved->get_error_message(); }
 
-    // wp editor may have written to a different filename; normalise
     if (!empty($saved['path']) && $saved['path'] !== $dest) {
         @rename($saved['path'], $dest);
     }
@@ -184,10 +183,10 @@ function fbl_catch_images_page() {
                     }
                 }
 
-                echo '<div class="notice notice-success"><p><strong>' . $made . '</strong> day image(s) created from “' .
-                     esc_html($folder) . '”';
+                echo '<div class="notice notice-success"><p><strong>' . $made . '</strong> day image(s) created from &ldquo;' .
+                     esc_html($folder) . '&rdquo;';
                 if (count($ids) < 31) {
-                    echo ' — that folder only has ' . count($ids) . ' image(s), so days ' . ($made + 1) . '–31 are empty';
+                    echo ' &mdash; that folder only has ' . count($ids) . ' image(s), so days ' . ($made + 1) . '&ndash;31 are empty';
                 }
                 echo '.</p></div>';
 
@@ -285,7 +284,7 @@ function fbl_catch_images_page() {
             <h2>Fill from a folder</h2>
             <p class="description" style="margin-bottom: 12px;">
                 Picks 31 images at random from a FileBird folder, resizes them, and writes them as
-                day-01 … day-31. Crop and tidy the source folder first — this uses whatever is in it.
+                day-01 &hellip; day-31. Crop and tidy the source folder first &mdash; this uses whatever is in it.
                 <strong>This replaces all existing day images.</strong>
             </p>
 
@@ -296,7 +295,7 @@ function fbl_catch_images_page() {
                         <th scope="row"><label for="fbl_catch_source_folder">Source folder</label></th>
                         <td>
                             <select name="fbl_catch_source_folder" id="fbl_catch_source_folder" style="min-width:300px;">
-                                <option value="">— choose —</option>
+                                <option value="">&mdash; choose &mdash;</option>
                                 <?php foreach ($folders as $f): ?>
                                     <option value="<?php echo esc_attr($f->name); ?>">
                                         <?php echo esc_html($f->name . ' (' . (int) $f->cnt . ')'); ?>
@@ -333,7 +332,7 @@ function fbl_catch_images_page() {
         <!-- ============ MANUAL UPLOAD (single-day fixes) ============ -->
         <div style="background: #fff; padding: 20px; border: 1px solid #ccc; margin: 20px 0;">
             <h2>Upload individual images</h2>
-            <p class="description">For replacing one day without redoing the month. Files must be named day-01.jpg … day-31.jpg. JPG, 1920px wide recommended.</p>
+            <p class="description">For replacing one day without redoing the month. Files must be named day-01.jpg &hellip; day-31.jpg. JPG, 1920px wide recommended.</p>
             <form method="post" enctype="multipart/form-data">
                 <?php wp_nonce_field('fbl_catch_upload', 'fbl_catch_nonce'); ?>
                 <p>
@@ -491,9 +490,15 @@ function fbl_catch_images_page() {
 
 /* =========================================================
    CATCH GALLERY - SHORTCODE
+   [catch_gallery]                 -> 3-column grid (cropped, uniform)
+   [catch_gallery view="masonry"]  -> masonry, uncropped, newest first
+                                      reading left-to-right across the top
    ========================================================= */
 
-add_shortcode('catch_gallery', function() {
+add_shortcode('catch_gallery', function($atts) {
+    $atts = shortcode_atts(array('view' => 'grid'), $atts, 'catch_gallery');
+    $view = ($atts['view'] === 'masonry') ? 'masonry' : 'grid';
+
     $upload_dir = wp_upload_dir();
     $catch_dir  = $upload_dir['basedir'] . '/feature-images';
     $catch_url  = $upload_dir['baseurl'] . '/feature-images';
@@ -521,6 +526,7 @@ add_shortcode('catch_gallery', function() {
         }
     }
 
+    // newest day first
     $images = array_reverse($images);
 
     ob_start();
@@ -529,16 +535,19 @@ add_shortcode('catch_gallery', function() {
     <div class="fbl-catch-gallery-header">
         <h1 class="fbl-catch-gallery-title">Catch of the Day Gallery</h1>
         <p class="fbl-catch-gallery-subtitle">
-            <?php echo date_i18n('F Y'); ?> • <?php echo count($images); ?> catches
+            <?php echo date_i18n('F Y'); ?> &bull; <?php echo count($images); ?> catches
         </p>
     </div>
 
     <?php if (empty($images)): ?>
+
         <div class="fbl-catch-gallery-empty">
             <p>No catches uploaded yet for this month. Check back soon!</p>
         </div>
+
     <?php else: ?>
-        <div class="fbl-catch-gallery-grid">
+
+        <div class="fbl-catch-gallery-grid fbl-catch-gallery--<?php echo esc_attr($view); ?>">
             <?php foreach ($images as $image): ?>
                 <div class="fbl-catch-gallery-item">
                     <a href="<?php echo esc_url($image['url']); ?>"
@@ -557,6 +566,46 @@ add_shortcode('catch_gallery', function() {
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <?php if ($view === 'masonry'): ?>
+        <script>
+        (function () {
+            var grid = document.querySelector('.fbl-catch-gallery--masonry');
+            if (!grid) return;
+
+            // capture the original (newest-first) order once
+            var items = Array.prototype.slice.call(grid.children);
+
+            function layout() {
+                var w    = window.innerWidth;
+                var cols = (w <= 640) ? 1 : (w <= 980 ? 2 : 3);
+
+                grid.innerHTML = '';
+                var colEls = [];
+                for (var c = 0; c < cols; c++) {
+                    var d = document.createElement('div');
+                    d.className = 'fbl-catch-masonry-col';
+                    grid.appendChild(d);
+                    colEls.push(d);
+                }
+
+                // round-robin: keeps newest-first reading left-to-right
+                items.forEach(function (el, i) {
+                    colEls[i % cols].appendChild(el);
+                });
+            }
+
+            layout();
+
+            var t;
+            window.addEventListener('resize', function () {
+                clearTimeout(t);
+                t = setTimeout(layout, 200);
+            });
+        })();
+        </script>
+        <?php endif; ?>
+
     <?php endif; ?>
 
     <?php
