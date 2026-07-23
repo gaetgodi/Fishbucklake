@@ -1,6 +1,6 @@
 /**
  * FBL Flickr Import
- * Upload a zip, inspect it, then import in batches with progress.
+ * Chunked zip upload (bypasses nginx body-size limits), then batched import.
  */
 (function () {
     'use strict';
@@ -8,8 +8,9 @@
     var cfg = window.FBL_FI || {};
     var els = {};
     var session = '';
-    var total = 0;
     var cancelled = false;
+
+    var CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB — well under any server limit
 
     function $(id) { return document.getElementById(id); }
 
@@ -31,7 +32,16 @@
 
         if (!els.upload) return;
 
-        els.upload.addEventListener('click', doUpload);
+        // upload progress bar, injected under the button
+        els.upBar = document.createElement('div');
+        els.upBar.className = 'fbl-fi-bar';
+        els.upBar.style.display = 'none';
+        els.upBar.style.maxWidth = '480px';
+        els.upBar.innerHTML = '<div class="fbl-fi-bar-fill" id="fbl-fi-upbar-fill"></div>';
+        els.upload.parentNode.appendChild(els.upBar);
+        els.upBarFill = $('fbl-fi-upbar-fill');
+
+        els.upload.addEventListener('click', startUpload);
         els.start.addEventListener('click', startImport);
         els.cancel.addEventListener('click', function () {
             cancelled = true;
@@ -40,46 +50,91 @@
         });
     });
 
-    function doUpload() {
+    /* ---------- chunked upload ---------- */
+
+    function startUpload() {
         if (!els.file.files || !els.file.files.length) {
             els.status.textContent = 'Choose a zip file first.';
             return;
         }
-        var fd = new FormData();
-        fd.append('action', 'fbl_fi_upload');
-        fd.append('nonce', cfg.nonce);
-        fd.append('zipfile', els.file.files[0]);
+        var file  = els.file.files[0];
+        var uid   = 'u' + Date.now() + Math.floor(Math.random() * 100000);
+        var total = Math.ceil(file.size / CHUNK_SIZE);
 
+        cancelled = false;
         els.upload.disabled = true;
-        els.status.textContent = 'uploading and extracting… (large albums take a while)';
+        els.upBar.style.display = '';
+        els.upBarFill.style.width = '0%';
+        els.status.textContent = 'uploading… 0%';
+
+        sendChunk(file, uid, 0, total, 0);
+    }
+
+    function sendChunk(file, uid, index, total, attempt) {
+        if (cancelled) return;
+
+        var start = index * CHUNK_SIZE;
+        var blob  = file.slice(start, Math.min(start + CHUNK_SIZE, file.size));
+
+        var fd = new FormData();
+        fd.append('action', 'fbl_fi_chunk');
+        fd.append('nonce', cfg.nonce);
+        fd.append('uid', uid);
+        fd.append('index', index);
+        fd.append('total', total);
+        fd.append('name', file.name);
+        fd.append('chunk', blob);
 
         fetch(cfg.ajax, { method: 'POST', credentials: 'same-origin', body: fd })
             .then(function (r) { return r.json(); })
             .then(function (res) {
-                els.upload.disabled = false;
                 if (!res.success) {
-                    els.status.textContent = 'Error: ' + (res.data || 'upload failed');
+                    els.upload.disabled = false;
+                    els.status.textContent = 'Error: ' + (res.data || 'chunk failed');
                     return;
                 }
-                session = res.data.session;
-                total   = res.data.count;
+                var pct = Math.round(((index + 1) / total) * 100);
+                els.upBarFill.style.width = pct + '%';
+
+                if (!res.data.complete) {
+                    els.status.textContent = 'uploading… ' + pct + '%';
+                    sendChunk(file, uid, index + 1, total, 0);
+                    return;
+                }
+
+                // final chunk: the zip was assembled and extracted
+                els.upload.disabled = false;
                 els.status.textContent = '';
-                var msg = '<strong>' + res.data.count + '</strong> image' +
-                          (res.data.count === 1 ? '' : 's') + ' found';
-                if (res.data.album) msg += ' in album “' + escapeHtml(res.data.album) + '”';
-                if (res.data.skipped) msg += ' — ' + res.data.skipped + ' non-image entr' +
-                          (res.data.skipped === 1 ? 'y' : 'ies') + ' skipped';
-                msg += '.';
-                els.summary.innerHTML = msg;
-                els.folder.value = res.data.folder;
-                els.stage2.style.display = '';
-                cancelled = false;
+                els.upBar.style.display = 'none';
+                showStage2(res.data);
             })
             .catch(function () {
-                els.upload.disabled = false;
-                els.status.textContent = 'Upload request failed (file may exceed the server limit).';
+                // retry a failed chunk up to 3 times before giving up
+                if (attempt < 3) {
+                    els.status.textContent = 'chunk ' + (index + 1) + ' failed — retrying…';
+                    setTimeout(function () {
+                        sendChunk(file, uid, index, total, attempt + 1);
+                    }, 1000 * (attempt + 1));
+                } else {
+                    els.upload.disabled = false;
+                    els.status.textContent = 'Upload failed at chunk ' + (index + 1) + '.';
+                }
             });
     }
+
+    function showStage2(d) {
+        session = d.session;
+        var msg = '<strong>' + d.count + '</strong> image' + (d.count === 1 ? '' : 's') + ' found';
+        if (d.album)   msg += ' in album “' + escapeHtml(d.album) + '”';
+        if (d.skipped) msg += ' — ' + d.skipped + ' non-image entr' +
+                              (d.skipped === 1 ? 'y' : 'ies') + ' skipped';
+        msg += '.';
+        els.summary.innerHTML = msg;
+        els.folder.value = d.folder;
+        els.stage2.style.display = '';
+    }
+
+    /* ---------- batched import ---------- */
 
     function startImport() {
         var folder = (els.folder.value || '').trim();
