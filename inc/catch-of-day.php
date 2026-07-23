@@ -28,6 +28,112 @@ add_action('admin_menu', function() {
 });
 
 /* =========================================================
+   HELPERS - FileBird folder sourcing
+   ========================================================= */
+
+/**
+ * FileBird folders with image counts, WEB_ first, then _FBL, then the rest.
+ */
+function fbl_catch_folders() {
+    global $wpdb;
+    $rows = $wpdb->get_results(
+        "SELECT f.id, f.name, COUNT(fa.attachment_id) AS cnt
+         FROM {$wpdb->prefix}fbv f
+         LEFT JOIN {$wpdb->prefix}fbv_attachment_folder fa ON fa.folder_id = f.id
+         LEFT JOIN {$wpdb->posts} p
+                ON p.ID = fa.attachment_id
+               AND p.post_type = 'attachment'
+               AND p.post_mime_type LIKE 'image/%%'
+         GROUP BY f.id, f.name"
+    );
+    if (!$rows) return array();
+
+    usort($rows, function ($a, $b) {
+        $rank = function ($n) {
+            if (strpos($n, 'WEB_') === 0)     return 0;
+            if (substr($n, -4) === '_FBL')    return 1;
+            return 2;
+        };
+        $ra = $rank($a->name);
+        $rb = $rank($b->name);
+        if ($ra !== $rb) return $ra - $rb;
+        return strcasecmp($a->name, $b->name);
+    });
+    return $rows;
+}
+
+/**
+ * Attachment IDs of images in a FileBird folder (by name).
+ */
+function fbl_catch_folder_image_ids($folder_name) {
+    global $wpdb;
+    $fid = (int) $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM {$wpdb->prefix}fbv WHERE name = %s", $folder_name
+    ));
+    if (!$fid) return array();
+
+    $ids = $wpdb->get_col($wpdb->prepare(
+        "SELECT fa.attachment_id
+         FROM {$wpdb->prefix}fbv_attachment_folder fa
+         INNER JOIN {$wpdb->posts} p ON p.ID = fa.attachment_id
+         WHERE fa.folder_id = %d
+           AND p.post_type = 'attachment'
+           AND p.post_mime_type LIKE 'image/%%'",
+        $fid
+    ));
+    return array_map('intval', $ids);
+}
+
+/**
+ * Copy a source image to $dest as JPEG, resized to fit $maxw wide.
+ * Uses Imagick when available, GD (via WP image editor) otherwise.
+ * Returns true or an error string.
+ */
+function fbl_catch_make_day_image($src, $dest, $maxw, $quality) {
+    if (!file_exists($src)) return 'source missing';
+
+    if (extension_loaded('imagick')) {
+        try {
+            $im = new Imagick($src);
+            $im->autoOrient();
+            if ($im->getImageWidth() > $maxw) {
+                $im->resizeImage($maxw, 0, Imagick::FILTER_LANCZOS, 1);
+            }
+            $im->setImageFormat('jpeg');
+            $im->setImageCompressionQuality($quality);
+            $im->stripImage();
+            $im->writeImage($dest);
+            $im->clear();
+            $im->destroy();
+            @chmod($dest, 0644);
+            return true;
+        } catch (Exception $e) {
+            return 'imagick: ' . $e->getMessage();
+        }
+    }
+
+    // GD fallback
+    if (!copy($src, $dest)) return 'copy failed';
+    $editor = wp_get_image_editor($dest);
+    if (is_wp_error($editor)) { @unlink($dest); return 'gd: ' . $editor->get_error_message(); }
+    $size = $editor->get_size();
+    if ($size['width'] > $maxw) {
+        $r = $editor->resize($maxw, null, false);
+        if (is_wp_error($r)) { @unlink($dest); return 'gd: ' . $r->get_error_message(); }
+    }
+    $editor->set_quality($quality);
+    $saved = $editor->save($dest, 'image/jpeg');
+    if (is_wp_error($saved)) { @unlink($dest); return 'gd: ' . $saved->get_error_message(); }
+
+    // wp editor may have written to a different filename; normalise
+    if (!empty($saved['path']) && $saved['path'] !== $dest) {
+        @rename($saved['path'], $dest);
+    }
+    @chmod($dest, 0644);
+    return true;
+}
+
+/* =========================================================
    CATCH OF THE DAY - ADMIN PAGE
    ========================================================= */
 
@@ -38,6 +144,59 @@ function fbl_catch_images_page() {
 
     if (!file_exists($catch_dir)) {
         wp_mkdir_p($catch_dir);
+    }
+
+    /* ---------- Fill from a FileBird folder ---------- */
+    if (isset($_POST['fbl_catch_fill']) && check_admin_referer('fbl_catch_fill', 'fbl_catch_fill_nonce')) {
+        $folder  = isset($_POST['fbl_catch_source_folder']) ? sanitize_text_field(wp_unslash($_POST['fbl_catch_source_folder'])) : '';
+        $maxw    = isset($_POST['fbl_catch_maxw'])    ? max(800, min(4000, (int) $_POST['fbl_catch_maxw'])) : 1920;
+        $quality = isset($_POST['fbl_catch_quality']) ? max(60, min(100, (int) $_POST['fbl_catch_quality'])) : 88;
+
+        if ($folder === '') {
+            echo '<div class="notice notice-error"><p>Choose a source folder first.</p></div>';
+        } else {
+            $ids = fbl_catch_folder_image_ids($folder);
+
+            if (empty($ids)) {
+                echo '<div class="notice notice-error"><p>That folder contains no images.</p></div>';
+            } else {
+                shuffle($ids);
+                $pick = array_slice($ids, 0, 31);
+
+                // clear the existing set first so no stale days survive
+                foreach (glob($catch_dir . '/day-*.jpg') as $old) {
+                    if (preg_match('/day-(0[1-9]|[12][0-9]|3[01])\.jpg$/', $old)) @unlink($old);
+                }
+
+                $made   = 0;
+                $errors = array();
+
+                foreach ($pick as $i => $att_id) {
+                    $day  = sprintf('%02d', $i + 1);
+                    $src  = get_attached_file($att_id);
+                    $dest = $catch_dir . '/day-' . $day . '.jpg';
+
+                    $res = fbl_catch_make_day_image($src, $dest, $maxw, $quality);
+                    if ($res === true) {
+                        $made++;
+                    } else {
+                        $errors[] = 'day-' . $day . ': ' . $res;
+                    }
+                }
+
+                echo '<div class="notice notice-success"><p><strong>' . $made . '</strong> day image(s) created from “' .
+                     esc_html($folder) . '”';
+                if (count($ids) < 31) {
+                    echo ' — that folder only has ' . count($ids) . ' image(s), so days ' . ($made + 1) . '–31 are empty';
+                }
+                echo '.</p></div>';
+
+                if (!empty($errors)) {
+                    echo '<div class="notice notice-warning"><p>Some images could not be processed:<br>' .
+                         esc_html(implode(' | ', array_slice($errors, 0, 10))) . '</p></div>';
+                }
+            }
+        }
     }
 
     // Handle bulk deletion
@@ -114,23 +273,74 @@ function fbl_catch_images_page() {
     }
 
     $view_mode = isset($_GET['view']) ? $_GET['view'] : 'grid';
+    $folders   = fbl_catch_folders();
 
     ?>
     <div class="wrap">
         <h1>Catch of the Day Images</h1>
-        <p>Upload images for the daily feature. Images must be named <strong>day-01.jpg</strong> through <strong>day-31.jpg</strong></p>
-        <p><strong>Requirements:</strong> JPG format, 1920px wide, 72 DPI recommended</p>
+        <p>Images are shown one per day of the month, named <strong>day-01.jpg</strong> through <strong>day-31.jpg</strong>.</p>
 
+        <!-- ============ FILL FROM A FILEBIRD FOLDER ============ -->
         <div style="background: #fff; padding: 20px; border: 1px solid #ccc; margin: 20px 0;">
-            <h2>Upload Images</h2>
+            <h2>Fill from a folder</h2>
+            <p class="description" style="margin-bottom: 12px;">
+                Picks 31 images at random from a FileBird folder, resizes them, and writes them as
+                day-01 … day-31. Crop and tidy the source folder first — this uses whatever is in it.
+                <strong>This replaces all existing day images.</strong>
+            </p>
+
+            <form method="post" onsubmit="return confirm('Replace ALL 31 day images with a random selection from the chosen folder?\n\nThe current set will be deleted.');">
+                <?php wp_nonce_field('fbl_catch_fill', 'fbl_catch_fill_nonce'); ?>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="fbl_catch_source_folder">Source folder</label></th>
+                        <td>
+                            <select name="fbl_catch_source_folder" id="fbl_catch_source_folder" style="min-width:300px;">
+                                <option value="">— choose —</option>
+                                <?php foreach ($folders as $f): ?>
+                                    <option value="<?php echo esc_attr($f->name); ?>">
+                                        <?php echo esc_html($f->name . ' (' . (int) $f->cnt . ')'); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description">Folders with fewer than 31 images will fill only that many days.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="fbl_catch_maxw">Max width</label></th>
+                        <td>
+                            <input type="number" name="fbl_catch_maxw" id="fbl_catch_maxw" value="1920"
+                                   min="800" max="4000" step="10" style="width:100px;"> px
+                            <p class="description">1920 is the recommended width for the modal.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="fbl_catch_quality">JPEG quality</label></th>
+                        <td>
+                            <input type="number" name="fbl_catch_quality" id="fbl_catch_quality" value="88"
+                                   min="60" max="100" step="1" style="width:80px;">
+                        </td>
+                    </tr>
+                </table>
+                <p>
+                    <button type="submit" name="fbl_catch_fill" class="button button-primary">
+                        Fill 31 days from this folder
+                    </button>
+                </p>
+            </form>
+        </div>
+
+        <!-- ============ MANUAL UPLOAD (single-day fixes) ============ -->
+        <div style="background: #fff; padding: 20px; border: 1px solid #ccc; margin: 20px 0;">
+            <h2>Upload individual images</h2>
+            <p class="description">For replacing one day without redoing the month. Files must be named day-01.jpg … day-31.jpg. JPG, 1920px wide recommended.</p>
             <form method="post" enctype="multipart/form-data">
                 <?php wp_nonce_field('fbl_catch_upload', 'fbl_catch_nonce'); ?>
                 <p>
                     <input type="file" name="fbl_catch_files[]" multiple accept=".jpg,.jpeg" style="margin-bottom: 10px;">
                 </p>
-                <p class="description">Select one or more images. Files must be named day-01.jpg, day-02.jpg, etc.</p>
                 <p>
-                    <button type="submit" name="fbl_catch_upload" class="button button-primary">Upload Images</button>
+                    <button type="submit" name="fbl_catch_upload" class="button">Upload Images</button>
                 </p>
             </form>
         </div>
