@@ -173,3 +173,12 @@
         height: 36px;
     }
 }
+/* Arrow glyphs are SVG with stroke="currentColor" — force white regardless of
+   any inherited button color from Divi/resets. */
+.fbl-gallery-prev svg,
+.fbl-gallery-next svg,
+.fbl-gallery--fit-contain .fbl-gallery-prev svg,
+.fbl-gallery--fit-contain .fbl-gallery-next svg {
+    stroke: #fff !important;
+    color: #fff !important;
+}
