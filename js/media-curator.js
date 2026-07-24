@@ -9,6 +9,8 @@
     var els = {};
     var suggestFolders = (window.FBL_CURATOR_FOLDERS || []).slice();
     var currentFolder = '';
+    var loadedFolder  = '';   // the folder whose images are currently in the table
+    var switching     = false; // guard so our programmatic re-select of the dropdown doesn't re-fire
 
     function $(sel, ctx) { return (ctx || document).querySelector(sel); }
     function $all(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
@@ -49,7 +51,6 @@
         return 'WEB_' + base;
     }
 
-    // Has the user deliberately set a target of their own?
     function targetIsUserSet() {
         var v = (els.target.value || '').trim();
         return els.target.dataset.userset === '1' && v !== '' && v !== 'WEB_';
@@ -75,13 +76,64 @@
         }).then(function (r) { return r.json(); });
     }
 
+    function getSelectedIds() {
+        return $all('tr', els.rows)
+            .filter(function (r) { return $('.fbl-curator-select', r).checked; })
+            .map(function (r) { return r.dataset.id; });
+    }
+
+    /**
+     * When the source dropdown changes, if the OUTGOING folder had selections
+     * and a valid target is set, offer to copy them first. Cancel aborts the
+     * switch entirely and restores the dropdown to the outgoing folder, so
+     * the selections are never lost to a mis-switch.
+     */
     function onSourceChange() {
-        var folder = els.source.value;
+        if (switching) return; // ignore the programmatic revert below
+
+        var newFolder = els.source.value;
+        var selected  = getSelectedIds();
+        var target    = (els.target.value || '').trim();
+
+        if (selected.length && target && target !== 'WEB_') {
+            var ok = window.confirm(
+                'Copy ' + selected.length + ' selected image(s) to "' + target + '" before switching?\n\n' +
+                'OK = copy, then switch.\n' +
+                'Cancel = stay here and keep your selections.'
+            );
+            if (!ok) {
+                // abort the switch: put the dropdown back on the loaded folder
+                switching = true;
+                els.source.value = loadedFolder;
+                switching = false;
+                els.status.textContent = 'Switch cancelled — selections kept.';
+                return;
+            }
+            // copy first, then proceed to load the new folder
+            els.status.textContent = 'copying ' + selected.length + ' to ' + target + '…';
+            ajax('fbl_curator_copyweb', { ids: selected, target: target }).then(function (res) {
+                if (res.success) {
+                    maybeAddFolder(res.data);
+                    els.status.textContent = 'Copied ' + res.data.copied + ' to ' + res.data.target +
+                        ' (' + res.data.skipped + ' already there). Loading ' + newFolder + '…';
+                } else {
+                    els.status.textContent = 'copy error: ' + (res.data || 'failed');
+                }
+                loadFolder(newFolder);
+            });
+            return;
+        }
+
+        loadFolder(newFolder);
+    }
+
+    function loadFolder(folder) {
         currentFolder = folder;
-        els.status.textContent = '';
+        loadedFolder  = folder;
         if (els.flagall) els.flagall.checked = false;
         if (els.selectall) els.selectall.checked = false;
         updateRemoveLabel();
+
         if (!folder) {
             els.table.style.display = 'none';
             els.actions.style.display = 'none';
@@ -89,8 +141,7 @@
             els.count.textContent = '';
             return;
         }
-        // Only auto-suggest a target if the user hasn't set one of their own.
-        // This lets you browse many source folders while keeping one WEB target.
+
         if (!targetIsUserSet()) {
             els.target.value = suggestTarget(folder);
         }
@@ -297,7 +348,6 @@
     function initTargetSuggest() {
         if (!els.target || !els.suggest) return;
 
-        // typing marks the target as user-set, so it stops auto-changing
         els.target.addEventListener('input', function () {
             els.target.dataset.userset = '1';
             renderSuggest();
@@ -327,7 +377,7 @@
             item.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 els.target.value = f.name;
-                els.target.dataset.userset = '1';   // picking a suggestion also locks it
+                els.target.dataset.userset = '1';
                 hideSuggest();
                 els.target.focus();
             });
