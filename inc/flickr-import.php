@@ -63,7 +63,7 @@ function fbl_fi_create_folder($name) {
     global $wpdb;
     $wpdb->insert(
         "{$wpdb->prefix}fbv",
-        array('name' => $name, 'parent' => 0, 'type' => 0, 'ord' => 0, 'created_by' => get_current_user_id()),
+        array('name' => $name, 'parent' => 0, 'type' => 0, 'ord' => 0, 'created_by' => 0),
         array('%s', '%d', '%d', '%d', '%d')
     );
     return (int) $wpdb->insert_id;
