@@ -212,3 +212,10 @@
     outline: 2px solid #2271b1;
     outline-offset: 1px;
 }
+.fbl-curator-hover-dims {
+    text-align: center;
+    font-size: 12px;
+    color: #1d2327;
+    padding: 4px 0 2px;
+    font-family: Consolas, Monaco, monospace;
+}

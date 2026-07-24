@@ -126,6 +126,7 @@
         img.title = 'Click to select';
         if (it.large) {
             img.dataset.large = it.large;
+            img.dataset.dims = it.dims || '';
             img.addEventListener('mouseenter', showHover);
             img.addEventListener('mousemove', moveHover);
             img.addEventListener('mouseleave', hideHover);
@@ -263,7 +264,11 @@
     function showHover(e) {
         var large = e.target.dataset.large;
         if (!large) return;
-        els.hover.innerHTML = '<img src="' + large + '" alt="">';
+        var dims = e.target.dataset.dims || '';
+        var caption = dims
+            ? '<div class="fbl-curator-hover-dims">' + dims + '</div>'
+            : '';
+        els.hover.innerHTML = '<img src="' + large + '" alt="">' + caption;
         els.hover.classList.add('is-visible');
         moveHover(e);
     }

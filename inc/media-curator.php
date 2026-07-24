@@ -239,6 +239,10 @@ add_action('wp_ajax_fbl_curator_load', function () {
         $id = (int) $id;
         $caption = wp_get_attachment_caption($id);
         $title   = get_the_title($id);
+        $meta = wp_get_attachment_metadata($id);
+        $dims = (is_array($meta) && !empty($meta['width']) && !empty($meta['height']))
+              ? $meta['width'] . ' × ' . $meta['height']
+              : '';
         $items[] = array(
             'id'         => $id,
             'thumb'      => wp_get_attachment_image_url($id, 'thumbnail'),
@@ -247,6 +251,7 @@ add_action('wp_ajax_fbl_curator_load', function () {
             'title'      => $title,
             'caption'    => $caption,
             'suggestion' => ($caption === '' || $caption === null) ? $title : '',
+            'dims'       => $dims,
         );
     }
     usort($items, function ($a, $b) { return strcasecmp($a['title'], $b['title']); });
