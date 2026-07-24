@@ -49,6 +49,12 @@
         return 'WEB_' + base;
     }
 
+    // Has the user deliberately set a target of their own?
+    function targetIsUserSet() {
+        var v = (els.target.value || '').trim();
+        return els.target.dataset.userset === '1' && v !== '' && v !== 'WEB_';
+    }
+
     function ajax(action, data) {
         var body = new URLSearchParams();
         body.append('action', action);
@@ -83,7 +89,11 @@
             els.count.textContent = '';
             return;
         }
-        els.target.value = suggestTarget(folder);
+        // Only auto-suggest a target if the user hasn't set one of their own.
+        // This lets you browse many source folders while keeping one WEB target.
+        if (!targetIsUserSet()) {
+            els.target.value = suggestTarget(folder);
+        }
         els.count.textContent = 'loading…';
         els.rows.innerHTML = '';
 
@@ -131,7 +141,6 @@
             img.addEventListener('mousemove', moveHover);
             img.addEventListener('mouseleave', hideHover);
         }
-        // click the thumbnail to toggle this row's Select checkbox
         img.addEventListener('click', function () {
             var cb = $('.fbl-curator-select', tr);
             if (!cb) return;
@@ -162,7 +171,6 @@
         var sel = document.createElement('input');
         sel.type = 'checkbox';
         sel.className = 'fbl-curator-select';
-        // keep the row highlight in sync when the box itself is clicked
         sel.addEventListener('change', function () { syncRowSelected(tr); });
         tdSel.appendChild(sel);
         tr.appendChild(tdSel);
@@ -179,7 +187,6 @@
         return tr;
     }
 
-    // add/remove the highlight class to match the Select checkbox
     function syncRowSelected(tr) {
         var cb = $('.fbl-curator-select', tr);
         if (!cb) return;
@@ -260,7 +267,7 @@
         rows.forEach(function (r) { els.rows.appendChild(r); });
     }
 
-    /* ---- hover preview ---- */
+    /* ---- hover preview (with dimensions) ---- */
     function showHover(e) {
         var large = e.target.dataset.large;
         if (!large) return;
@@ -289,7 +296,12 @@
     /* ---- custom target suggestion dropdown ---- */
     function initTargetSuggest() {
         if (!els.target || !els.suggest) return;
-        els.target.addEventListener('input', renderSuggest);
+
+        // typing marks the target as user-set, so it stops auto-changing
+        els.target.addEventListener('input', function () {
+            els.target.dataset.userset = '1';
+            renderSuggest();
+        });
         els.target.addEventListener('focus', renderSuggest);
         els.target.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') hideSuggest();
@@ -315,6 +327,7 @@
             item.addEventListener('mousedown', function (e) {
                 e.preventDefault();
                 els.target.value = f.name;
+                els.target.dataset.userset = '1';   // picking a suggestion also locks it
                 hideSuggest();
                 els.target.focus();
             });
