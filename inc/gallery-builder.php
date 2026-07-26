@@ -192,7 +192,34 @@ add_action('wp_ajax_fbl_gallery_find_pages', function() {
 
     wp_send_json_success($out);
 });
+/* ---------------------------------------------------------
+   AJAX: get image titles for a folder (for the Links panel)
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_gallery_folder_titles', function() {
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
 
+    if (!current_user_can('manage_fbl_gallery')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $folder = isset($_POST['folder']) ? sanitize_text_field(wp_unslash($_POST['folder'])) : '';
+    if ($folder === '') {
+        wp_send_json_error('No folder given.');
+    }
+
+    $ids = fbl_gallery_get_ids($folder);
+    if ($ids === null || empty($ids)) {
+        wp_send_json_success(array());
+    }
+
+    $titles = array();
+    foreach ($ids as $id) {
+        $titles[] = get_the_title($id);
+    }
+    $titles = array_values(array_unique($titles));
+
+    wp_send_json_success($titles);
+});
 /* ---------------------------------------------------------
    AJAX: update selected shortcode instances
    --------------------------------------------------------- */
@@ -450,6 +477,17 @@ function fbl_gallery_builder_page() {
 
             <hr>
 
+            <h2>Page links (optional)</h2>
+            <p class="description">
+                Turn specific images into links to other pages instead of the lightbox.
+                Leave a field blank to keep that image's normal behavior.
+            </p>
+            <div id="fblgb-links-wrap">
+                <em>Select a folder to see its images here.</em>
+            </div>
+
+            <hr>
+
             <h2 style="margin-top: 0;">Generated shortcode</h2>
             <p>
                 <code id="fblgb-output" style="display: block; padding: 12px; background: #f0f0f1; font-size: 14px; user-select: all; word-break: break-all;"></code>
@@ -506,6 +544,7 @@ function fbl_gallery_builder_page() {
                 tcaption: document.getElementById('fblgb-tcaption'),
                 fit:      document.getElementById('fblgb-fit'),
                 link:     document.getElementById('fblgb-link'),
+                linksWrap: document.getElementById('fblgb-links-wrap'),
                 output:   document.getElementById('fblgb-output'),
                 copyBtn:  document.getElementById('fblgb-copy'),
                 copied:   document.getElementById('fblgb-copied'),
@@ -523,6 +562,9 @@ function fbl_gallery_builder_page() {
             var rowAutoplay = document.querySelector('.fblgb-row-autoplay');
 
             var foundInstances = [];
+            var previewTimer = null;
+            var folderTitles = [];
+            var linksLoadedFor = ''; var foundInstances = [];
             var previewTimer = null;
 
             function build() {
@@ -559,6 +601,9 @@ function fbl_gallery_builder_page() {
 
                 if (els.link.value !== 'lightbox') parts.push('link="' + els.link.value + '"');
 
+                var linksAttr = buildLinksAttr();
+                if (linksAttr) parts.push('links="' + linksAttr + '"');
+
                 if (els.link.value === 'lightbox' && els.caption.value !== 'caption') {
                     parts.push('caption="' + els.caption.value + '"');
                 }
@@ -575,7 +620,68 @@ function fbl_gallery_builder_page() {
 
                 schedulePreview();
             }
+            function loadFolderTitles() {
+                var folder = els.folder.value;
+                if (folder === linksLoadedFor) return;
+                linksLoadedFor = folder;
 
+                els.linksWrap.innerHTML = '<em>Loading images...</em>';
+
+                var body = new URLSearchParams();
+                body.append('action', 'fbl_gallery_folder_titles');
+                body.append('nonce', nonce);
+                body.append('folder', folder);
+
+                fetch(ajaxurl, { method: 'POST', body: body })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (!res.success || !res.data.length) {
+                            folderTitles = [];
+                            els.linksWrap.innerHTML = '<em>No images found in this folder.</em>';
+                            return;
+                        }
+                        folderTitles = res.data;
+                        renderLinksPanel();
+                    })
+                    .catch(function() {
+                        els.linksWrap.innerHTML = '<em>Could not load images.</em>';
+                    });
+            }
+
+            function renderLinksPanel() {
+                var html = '<table class="widefat striped"><tbody>';
+                folderTitles.forEach(function(title, i) {
+                    html += '<tr>' +
+                        '<td style="width:40%;">' + escapeHtml(title) + '</td>' +
+                        '<td><input type="text" class="fblgb-link-input" data-title="' +
+                        escapeHtml(title).replace(/"/g, '&quot;') +
+                        '" placeholder="/page-slug/ or leave blank" style="width:100%;"></td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table>';
+                els.linksWrap.innerHTML = html;
+
+                els.linksWrap.querySelectorAll('.fblgb-link-input').forEach(function(inp) {
+                    inp.addEventListener('input', build);
+                });
+            }
+
+            function buildLinksAttr() {
+                if (!els.linksWrap) return '';
+                var pairs = [];
+                els.linksWrap.querySelectorAll('.fblgb-link-input').forEach(function(inp) {
+                    var url = inp.value.trim();
+                    if (!url) return;
+                    var title = inp.getAttribute('data-title') || '';
+                    // titles/urls containing : or , would break the simple format - skip and warn
+                    if (title.indexOf(':') !== -1 || title.indexOf(',') !== -1 ||
+                        url.indexOf(':') !== -1 && url.indexOf('http') !== 0 && url.indexOf('/') !== 0) {
+                        // allow http(s):// URLs (they contain ':') but flag other stray colons
+                    }
+                    pairs.push(title + ':' + url);
+                });
+                return pairs.join(',');
+            }
             function schedulePreview() {
                 if (previewTimer) clearTimeout(previewTimer);
                 previewTimer = setTimeout(loadPreview, 500);
@@ -730,6 +836,8 @@ function fbl_gallery_builder_page() {
                 els[key].addEventListener('input', build);
             });
 
+            els.folder.addEventListener('change', loadFolderTitles);
+
             els.copyBtn.addEventListener('click', function() {
                 var text = els.output.textContent;
                 function done() {
@@ -753,6 +861,7 @@ function fbl_gallery_builder_page() {
             els.updateBtn.addEventListener('click', updatePages);
 
             build();
+            loadFolderTitles();
         })();
         </script>
     </div>
