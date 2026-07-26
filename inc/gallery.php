@@ -132,6 +132,7 @@ add_shortcode('fbl_gallery', function($atts) {
         'caption'  => 'caption',
         'fit'      => 'cover',
         'thumb_caption' => 'none',
+        'links'    => '',
     ), $atts, 'fbl_gallery');
 
     $folder = trim($atts['folder']);
@@ -171,6 +172,20 @@ add_shortcode('fbl_gallery', function($atts) {
     $tcap_mode = in_array($atts['thumb_caption'], array('none', 'caption', 'title'), true) ? $atts['thumb_caption'] : 'none';
     $fit       = ($atts['fit'] === 'contain') ? 'contain' : 'cover';
 
+    // Parse links="Title:URL,Title:URL" into a title => URL map (case-insensitive match).
+    $link_map = array();
+    if (trim($atts['links']) !== '') {
+        foreach (explode(',', $atts['links']) as $pair) {
+            $pos = strpos($pair, ':');
+            if ($pos === false) continue;
+            $t = trim(substr($pair, 0, $pos));
+            $u = trim(substr($pair, $pos + 1));
+            if ($t !== '' && $u !== '') {
+                $link_map[strtolower($t)] = $u;
+            }
+        }
+    }
+
     ob_start();
     ?>
     <div class="fbl-gallery fbl-gallery--<?php echo esc_attr($view); ?> fbl-gallery--fit-<?php echo esc_attr($fit); ?>"
@@ -200,9 +215,20 @@ add_shortcode('fbl_gallery', function($atts) {
                 $tcaption = wp_get_attachment_caption($id);
                 if (!$tcaption) $tcaption = get_the_title($id);
             }
+
+            // Does this image's title match an entry in the links map?
+            $page_link = '';
+            $title_key = strtolower(get_the_title($id));
+            if (isset($link_map[$title_key])) {
+                $page_link = $link_map[$title_key];
+            }
         ?>
             <div class="fbl-gallery-item<?php echo ($view === 'carousel' && $i === 0) ? ' is-active' : ''; ?>">
-                <?php if ($lightbox): ?>
+                <?php if ($page_link): ?>
+                    <a href="<?php echo esc_url($page_link); ?>" class="fbl-gallery-link fbl-gallery-link--page">
+                        <?php echo $thumb; ?>
+                    </a>
+                <?php elseif ($lightbox): ?>
                     <a href="<?php echo esc_url($full); ?>"
                        class="fbl-gallery-link"
                        data-fancybox="<?php echo esc_attr($group); ?>"
