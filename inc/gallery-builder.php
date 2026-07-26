@@ -625,7 +625,11 @@ function fbl_gallery_builder_page() {
                 if (folder === linksLoadedFor) return;
                 linksLoadedFor = folder;
 
+                // Clear stale links immediately so the shortcode never carries
+                // a previous folder's titles while the new list loads.
+                folderTitles = [];
                 els.linksWrap.innerHTML = '<em>Loading images...</em>';
+                build();
 
                 var body = new URLSearchParams();
                 body.append('action', 'fbl_gallery_folder_titles');
@@ -830,12 +834,14 @@ function fbl_gallery_builder_page() {
                 return d.innerHTML;
             }
 
-            ['folder', 'view', 'columns', 'limit', 'size', 'order', 'shuffle',
+            ['view', 'columns', 'limit', 'size', 'order', 'shuffle',
             'autoplay', 'caption', 'tcaption', 'fit', 'link'].forEach(function(key) {
                 els[key].addEventListener('change', build);
                 els[key].addEventListener('input', build);
             });
 
+            // Folder changes: clear+rebuild happens inside loadFolderTitles,
+            // so it alone drives both the panel and the shortcode.
             els.folder.addEventListener('change', loadFolderTitles);
 
             els.copyBtn.addEventListener('click', function() {
