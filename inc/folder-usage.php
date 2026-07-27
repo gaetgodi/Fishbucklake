@@ -135,6 +135,32 @@ function fbl_folder_usage_page() {
     $folders   = fbl_fu_all_folders();
     $usage_map = fbl_fu_scan_all_pages();
 
+    // Re-sort: used folders first (alphabetically by the page title(s) that
+    // use them), then unused folders at the bottom (alphabetically by name).
+    usort($folders, function ($a, $b) use ($usage_map) {
+        $uses_a = isset($usage_map[$a->name]) ? $usage_map[$a->name] : array();
+        $uses_b = isset($usage_map[$b->name]) ? $usage_map[$b->name] : array();
+
+        $used_a = !empty($uses_a);
+        $used_b = !empty($uses_b);
+
+        if ($used_a !== $used_b) {
+            return $used_a ? -1 : 1; // used folders first
+        }
+
+        if ($used_a) {
+            // sort by the alphabetically-first page title among this folder's uses
+            $titles_a = array_map(function ($u) { return strtolower($u['post_title']); }, $uses_a);
+            $titles_b = array_map(function ($u) { return strtolower($u['post_title']); }, $uses_b);
+            sort($titles_a);
+            sort($titles_b);
+            return strcmp($titles_a[0], $titles_b[0]);
+        }
+
+        // both unused: alphabetical by folder name
+        return strcasecmp($a->name, $b->name);
+    });
+
     $total_folders = count($folders);
     $used_count    = 0;
     foreach ($folders as $f) {
