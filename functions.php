@@ -24,3 +24,4 @@ require_once get_stylesheet_directory() . '/inc/gallery.php';
 require_once get_stylesheet_directory() . '/inc/gallery-builder.php';
 require_once get_stylesheet_directory() . '/inc/media-curator.php';
 require_once get_stylesheet_directory() . '/inc/flickr-import.php';
+require_once get_stylesheet_directory() . '/inc/folder-usage.php';
