@@ -195,6 +195,8 @@
 
 .fbl-gallery-item.fbl-gallery-item--overlay {
     position: relative;
+    overflow: hidden;
+    border-radius: var(--fbl-radius, 8px);
 }
 
 .fbl-gallery-caption--overlay {
