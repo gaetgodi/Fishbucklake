@@ -33,6 +33,10 @@ class FBL_Color_Tweaker {
             'label'       => 'Gold — Primary Accent',
             'description' => 'The most impactful color. Changes: all header headings (Hornepayne, FLY-IN, contact area), all 5 footer column headings, all footer menu links, left and right sidebar menu links and headings, element borders and dividers.',
         ],
+        'tile-caption-color' => [
+            'label'       => 'Photo Tile Caption Text',
+            'description' => 'Text color for the labeled photo tiles on the home page (e.g. "Lodges", "Outposts"). Defaults to match the Gold accent color for this theme, but can be set independently.',
+        ],
         'light' => [
             'label'       => 'Light — Body Text',
             'description' => 'Main readable text on dark backgrounds. Changes: paragraph text, intro column text, contact info in header. On the Light skin this is the page background instead.',

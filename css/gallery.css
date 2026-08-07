@@ -182,3 +182,39 @@
     stroke: #fff !important;
     color: #fff !important;
 }
+/* ---------------------------------------------------------
+   Overlay caption mode  [fbl_gallery thumb_caption="overlay"]
+   Text sits over the bottom of the image with a dark scrim
+   behind it for readability, in a script font. Color comes
+   from --fbl-tile-caption-color so it follows the active skin.
+   --------------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
+
+.fbl-gallery-item.fbl-gallery-item--overlay {
+    position: relative;
+}
+
+.fbl-gallery-caption--overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 2.5rem 1rem 1.25rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+    text-align: center;
+    pointer-events: none; /* clicks pass through to the link/image below */
+}
+
+.fbl-gallery-caption--overlay span {
+    font-family: 'Sacramento', cursive;
+    font-size: 2.4rem;
+    line-height: 1;
+    color: var(--fbl-tile-caption-color, var(--fbl-gold));
+    text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+}
+
+@media (max-width: 640px) {
+    .fbl-gallery-caption--overlay span {
+        font-size: 1.9rem;
+    }
+}

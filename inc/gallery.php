@@ -169,7 +169,7 @@ add_shortcode('fbl_gallery', function($atts) {
     $group     = 'fbl-' . sanitize_title($folder);
     $autoplay  = max(1000, (int) $atts['autoplay']);
     $cap_mode  = in_array($atts['caption'], array('caption', 'title', 'none'), true) ? $atts['caption'] : 'caption';
-    $tcap_mode = in_array($atts['thumb_caption'], array('none', 'caption', 'title'), true) ? $atts['thumb_caption'] : 'none';
+    $tcap_mode = in_array($atts['thumb_caption'], array('none', 'caption', 'title', 'overlay'), true) ? $atts['thumb_caption'] : 'none';
     $fit       = ($atts['fit'] === 'contain') ? 'contain' : 'cover';
 
     // Parse links="Title:URL,Title:URL" into a title => URL map (case-insensitive match).
@@ -211,7 +211,7 @@ add_shortcode('fbl_gallery', function($atts) {
             $tcaption = '';
             if ($tcap_mode === 'caption') {
                 $tcaption = wp_get_attachment_caption($id);
-            } elseif ($tcap_mode === 'title') {
+            } elseif ($tcap_mode === 'title' || $tcap_mode === 'overlay') {
                 $tcaption = wp_get_attachment_caption($id);
                 if (!$tcaption) $tcaption = get_the_title($id);
             }
@@ -223,7 +223,7 @@ add_shortcode('fbl_gallery', function($atts) {
                 $page_link = $link_map[$title_key];
             }
         ?>
-            <div class="fbl-gallery-item<?php echo ($view === 'carousel' && $i === 0) ? ' is-active' : ''; ?>">
+            <div class="fbl-gallery-item<?php echo ($view === 'carousel' && $i === 0) ? ' is-active' : ''; ?><?php echo ($tcap_mode === 'overlay') ? ' fbl-gallery-item--overlay' : ''; ?>">
                 <?php if ($page_link): ?>
                     <a href="<?php echo esc_url($page_link); ?>" class="fbl-gallery-link fbl-gallery-link--page">
                         <?php echo $thumb; ?>
@@ -239,7 +239,11 @@ add_shortcode('fbl_gallery', function($atts) {
                     <?php echo $thumb; ?>
                 <?php endif; ?>
                 <?php if ($tcaption): ?>
-                    <div class="fbl-gallery-caption"><?php echo esc_html($tcaption); ?></div>
+                    <?php if ($tcap_mode === 'overlay'): ?>
+                        <div class="fbl-gallery-caption--overlay"><span><?php echo esc_html($tcaption); ?></span></div>
+                    <?php else: ?>
+                        <div class="fbl-gallery-caption"><?php echo esc_html($tcaption); ?></div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
