@@ -206,6 +206,8 @@
     background: linear-gradient(to top, rgba(0,0,0,0.75), transparent);
     text-align: center;
     pointer-events: none; /* clicks pass through to the link/image below */
+    border-bottom-left-radius: var(--fbl-radius, 8px);
+    border-bottom-right-radius: var(--fbl-radius, 8px);
 }
 
 .fbl-gallery-caption--overlay span {
