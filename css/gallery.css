@@ -18,7 +18,6 @@
     display: block;
     width: 100%;
     height: auto;
-    border-radius: var(--fbl-radius, 8px);
 }
 
 .fbl-gallery-link {
