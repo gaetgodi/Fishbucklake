@@ -188,6 +188,12 @@
    behind it for readability, in a script font. Color comes
    from --fbl-tile-caption-color so it follows the active skin.
    --------------------------------------------------------- */
+   /* ---------------------------------------------------------
+   Overlay caption mode  [fbl_gallery thumb_caption="overlay"]
+   Text sits over the bottom of the image with a dark scrim
+   behind it for readability, in a script font. Color comes
+   from --fbl-tile-caption-color so it follows the active skin.
+   --------------------------------------------------------- */
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
 
 .fbl-gallery-item.fbl-gallery-item--overlay {
@@ -207,15 +213,9 @@
 
 .fbl-gallery-caption--overlay span {
     font-family: 'Sacramento', cursive;
-    font.fbl-gallery-caption--overlay span {
-        font-family: 'Sacramento', cursive;
-        font-size: 2.4rem;
-        line-height: 1;
-        color: var(--fbl-tile-caption-color, var(--fbl-gold)) !important;
-        text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-    }-size: 2.4rem;
+    font-size: 2.4rem;
     line-height: 1;
-    color: var(--fbl-tile-caption-color, var(--fbl-gold));
+    color: var(--fbl-tile-caption-color, var(--fbl-gold)) !important;
     text-shadow: 0 2px 6px rgba(0,0,0,0.6);
 }
 
