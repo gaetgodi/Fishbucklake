@@ -188,20 +188,13 @@
    Text sits over the bottom of the image with a dark scrim
    behind it for readability, in a script font. Color comes
    from --fbl-tile-caption-color so it follows the active skin.
+   Hover uses the same subtle lift as every other gallery tile
+   (see .fbl-gallery-link:hover above) — nothing special here.
    --------------------------------------------------------- */
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
 
 .fbl-gallery-item.fbl-gallery-item--overlay {
     position: relative;
-}
-
-/* On hover, show the full uncropped photo instead of the cropped 4:3 tile.
-   Click still navigates via the existing <a href> — this only changes
-   what's visible on hover, not the click behavior. */
-.fbl-gallery-item--overlay .fbl-gallery-link:hover .fbl-gallery-image {
-    transform: none; /* cancel the default zoom-in from .fbl-gallery-link:hover */
-    object-fit: contain;
-    background: var(--fbl-dark, #111);
 }
 
 .fbl-gallery-caption--overlay {
