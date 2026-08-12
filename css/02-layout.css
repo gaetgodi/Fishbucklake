@@ -486,11 +486,13 @@ p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) {
 }
 /* Contain single content-image floats so following elements don't wrap
    around them when the paragraph text is shorter than the image */
-@media (min-width: 981px) {
-  p:has(> img.fbl-content-image-float-left):not(:has(img.fbl-content-image-float-right)),
-  p:has(> img.fbl-content-image-float-right):not(:has(img.fbl-content-image-float-left)) {
-    overflow: hidden;
-  }
+   /* Stop lists wrapping around a preceding content-image float */
+   @media (min-width: 981px) {
+     ul.list-arrow,
+     ol.list-arrow {
+       clear: both;
+     }
+   }
 }
 /* Treat divs with float classes like images */
 div.fbl-content-image-float-left,
