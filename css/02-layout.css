@@ -484,6 +484,14 @@ p:has(img.fbl-content-image-float-left):has(img.fbl-content-image-float-right) {
     text-align: center !important;
   }
 }
+/* Contain single content-image floats so following elements don't wrap
+   around them when the paragraph text is shorter than the image */
+@media (min-width: 981px) {
+  p:has(> img.fbl-content-image-float-left):not(:has(img.fbl-content-image-float-right)),
+  p:has(> img.fbl-content-image-float-right):not(:has(img.fbl-content-image-float-left)) {
+    overflow: hidden;
+  }
+}
 /* Treat divs with float classes like images */
 div.fbl-content-image-float-left,
 div.fbl-content-image-float-right {
