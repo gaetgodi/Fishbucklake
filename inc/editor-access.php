@@ -57,6 +57,15 @@ add_action('customize_register', function($wp_customize) {
 
 add_action('admin_bar_menu', function($wp_admin_bar) {
 
+    // Preventive: prevents the WPSC-class exposure found on SPP 2026-08-14
+    // if page caching is ever added to this site. This hook only ever runs
+    // for a logged-in visitor (the admin bar), so its role-specific nodes
+    // must never be frozen into a shared cached page.
+    if (is_user_logged_in()) {
+        if ( ! defined( 'DONOTCACHEPAGE' ) ) define( 'DONOTCACHEPAGE', true );
+        nocache_headers();
+    }
+
     if (current_user_can('manage_options')) {
         // ADMIN — add Theme Colors as top-level link, keep everything else intact
         $wp_admin_bar->add_node(array(
@@ -100,6 +109,14 @@ add_action('admin_bar_menu', function($wp_admin_bar) {
 // Hide any remaining Customize nodes from frontend admin bar for editors only
 add_action('wp_head', function() {
     if (current_user_can('manage_options')) return;
+
+    // Preventive: prevents the WPSC-class exposure found on SPP 2026-08-14
+    // if page caching is ever added to this site.
+    if (is_user_logged_in()) {
+        if ( ! defined( 'DONOTCACHEPAGE' ) ) define( 'DONOTCACHEPAGE', true );
+        nocache_headers();
+    }
+
     echo '<style>#wp-admin-bar-customize, #wp-admin-bar-customize-divi-theme { display: none !important; }</style>';
 });
 
