@@ -9,9 +9,17 @@
    Renders a styled login form with register and lost
    password links. Redirects to home page after login.
    Usage: [fbl_login_form]
+
+   Preventive: prevents the WPSC-class exposure found on SPP
+   2026-08-14 if page caching is ever added to this site.
    ========================================================= */
 
 add_shortcode('fbl_login_form', function() {
+
+    if (is_user_logged_in()) {
+        if ( ! defined( 'DONOTCACHEPAGE' ) ) define( 'DONOTCACHEPAGE', true );
+        nocache_headers();
+    }
 
     // If already logged in, show a friendly message
     if (is_user_logged_in()) {
