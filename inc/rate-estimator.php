@@ -282,8 +282,8 @@ add_shortcode('fbl_rate_estimator', function() {
       </div>
 
       <div class="fbl-plan-toggle">
-        <button id="fbl-btn-boat" class="active" onclick="fblSetPlan('cabin')">&#128668; Cabin With Boat</button>
-        <button id="fbl-btn-outpost" onclick="fblSetPlan('outpost')">&#127794; Outpost</button>
+        <button id="fbl-btn-boat" class="active" onclick="fblSetPlan('cabin')">&#x1F6E5; Cabin With Boat</button>
+        <button id="fbl-btn-outpost" onclick="fblSetPlan('outpost')">&#x1F332; Outpost</button>
       </div>
 
       <div class="fbl-inputs">
