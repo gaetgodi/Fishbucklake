@@ -430,11 +430,23 @@ add_shortcode('fbl_rate', function($atts) {
         return '<span class="fbl-rate-figure">' . esc_html(number_format($value, 0)) . '%</span>';
     }
 
-    if (!isset($settings['plans'][$plan]) || !isset($settings['plans'][$plan][$item])) {
-        return ''; // unknown plan/item - fail quietly rather than print a wrong number
+    if (!isset($settings['plans'][$plan])) {
+        return ''; // unknown plan - fail quietly rather than print a wrong number
     }
 
-    $value = $settings['plans'][$plan][$item];
+    // "premiumBase" is not a stored field - it's the standard base rate
+    // plus one premium-boat surcharge, i.e. the figure the /rates/ page
+    // has always shown for its "Premium Boat Package" row. Computed here
+    // so it stays in sync with base/adultBoat automatically; deliberately
+    // not a persisted schema field since it isn't an independent price.
+    if ($item === 'premiumBase') {
+        $p = $settings['plans'][$plan];
+        $value = $p['base'] + $p['adultBoat'];
+    } elseif (isset($settings['plans'][$plan][$item])) {
+        $value = $settings['plans'][$plan][$item];
+    } else {
+        return ''; // unknown item - fail quietly rather than print a wrong number
+    }
 
     return sprintf(
         '<span class="fbl-price" data-fbl-usd="%s">$%s <span class="fbl-price-fx"></span></span>',
