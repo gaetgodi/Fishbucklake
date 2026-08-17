@@ -51,16 +51,29 @@ function fbl_get_rate_settings() {
 
     if (!is_array($saved)) $saved = array();
 
+    // Validate on read too, not just on save: register_setting()'s
+    // sanitize_callback only runs when the option is written through
+    // options.php (the admin form). A direct update_option() / wp-cli
+    // `option update` / raw SQL write bypasses it entirely, so a bad
+    // value already in the DB must not silently reach the front end -
+    // fall back to the built-in default for that one field instead.
     $out = $defaults;
-    $out['tax_rate'] = isset($saved['tax_rate']) ? (float) $saved['tax_rate'] : $defaults['tax_rate'];
+
+    if (isset($saved['tax_rate']) && is_numeric($saved['tax_rate']) && (float) $saved['tax_rate'] >= 0 && (float) $saved['tax_rate'] <= 100) {
+        $out['tax_rate'] = (float) $saved['tax_rate'];
+    }
 
     foreach ($defaults['plans'] as $plan_key => $plan_defaults) {
         if (!isset($saved['plans'][$plan_key]) || !is_array($saved['plans'][$plan_key])) continue;
         foreach ($plan_defaults as $field => $default_val) {
             if ($field === 'label') continue; // labels aren't editable via the admin screen
-            if (isset($saved['plans'][$plan_key][$field])) {
-                $out['plans'][$plan_key][$field] = (float) $saved['plans'][$plan_key][$field];
+            if (!isset($saved['plans'][$plan_key][$field])) continue;
+
+            $val = $saved['plans'][$plan_key][$field];
+            if (is_numeric($val) && (float) $val >= 0) {
+                $out['plans'][$plan_key][$field] = (float) $val;
             }
+            // else: leave $out at the built-in default for this field
         }
     }
 
