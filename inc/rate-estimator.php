@@ -343,7 +343,7 @@ add_action('wp_enqueue_scripts', function() {
 add_shortcode('fbl_rate_estimator', function() {
     ob_start();
     ?>
-    <div class="fbl-calc-wrap">
+    <div class="fbl-calc-wrap" id="fbl-estimate">
 
       <div class="fbl-calc-header">
         <h2>Rate Estimator</h2>
