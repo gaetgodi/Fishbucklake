@@ -204,7 +204,7 @@ function fbl_sanitize_rate_settings($input) {
    gated to manage_options per spec since this is pricing.
    --------------------------------------------------------- */
 add_action('admin_menu', function() {
-    add_menu_page(
+    $hook = add_menu_page(
         'Rate Settings',
         'Rates',
         'manage_options',
@@ -213,7 +213,55 @@ add_action('admin_menu', function() {
         'dashicons-money-alt',
         32
     );
+
+    // Stash the real hook suffix rather than guessing
+    // 'toplevel_page_fbl-rates' - used to gate the preview's
+    // assets to just this one admin screen.
+    add_action('load-' . $hook, function() {
+        add_action('admin_enqueue_scripts', 'fbl_enqueue_rates_admin_preview_assets');
+    });
 });
+
+function fbl_enqueue_rates_admin_preview_assets() {
+    wp_enqueue_style(
+        'fbl-rate-estimator',
+        get_stylesheet_directory_uri() . '/css/11-rate-estimator.css',
+        array(),
+        filemtime(get_stylesheet_directory() . '/css/11-rate-estimator.css')
+    );
+
+    // Same handle, same file, same fblRateData shape as the front end -
+    // this is the live shortcode's own JS, not a reimplementation. No
+    // currency-converter dependency here: the admin preview is USD-only,
+    // and rate-estimator.js already no-ops the fx hook when it's absent.
+    wp_enqueue_script(
+        'fbl-rate-estimator',
+        get_stylesheet_directory_uri() . '/js/rate-estimator.js',
+        array(),
+        filemtime(get_stylesheet_directory() . '/js/rate-estimator.js'),
+        true
+    );
+
+    $settings = fbl_get_rate_settings();
+    wp_localize_script('fbl-rate-estimator', 'fblRateData', array(
+        'rates'   => $settings['plans'],
+        'taxRate' => $settings['tax_rate'] / 100,
+    ));
+
+    // Preset a realistic booking (2 adults, 1 child, premium boat, 1 pet)
+    // by driving the same controls a visitor would click - not a second
+    // calculation path, just simulated input on the real widget.
+    wp_add_inline_script('fbl-rate-estimator', "
+        document.addEventListener('DOMContentLoaded', function () {
+            var pet = document.getElementById('fbl-pet');
+            var premium = document.getElementById('fbl-premium');
+            if (!pet || !premium) return;
+            pet.value = '1';
+            premium.checked = true;
+            fblTogglePremium();
+        });
+    ");
+}
 
 function fbl_rates_admin_page() {
     if (!current_user_can('manage_options')) return;
@@ -228,6 +276,15 @@ function fbl_rates_admin_page() {
             submit_button();
             ?>
         </form>
+
+        <hr style="margin: 2rem 0;">
+
+        <h2>Live Preview &mdash; Saved Rates</h2>
+        <p><strong>This preview reflects your saved rates, not what's in the form above.</strong> It updates only after you click "Save Changes" and the page reloads - it is not a live-as-you-type calculator, and there is no separate draft version of your rates: what's shown here is exactly what visitors see right now on the booking page.</p>
+        <p>Preset to a sample booking (2 adults, 1 child, premium boat, 1 pet) so you can see the effect of a rate change at a glance. Feel free to change the fields below too - it's the same live estimator that's on the booking page.</p>
+        <div style="max-width: 720px;">
+            <?php echo do_shortcode('[fbl_rate_estimator]'); ?>
+        </div>
     </div>
     <?php
 }
