@@ -579,7 +579,7 @@ add_shortcode('fbl_rate_estimator', function() {
 
       <div class="fbl-deposit-row" id="fbl-deposit-row">
         <div class="fbl-deposit-line">
-          <span class="fbl-deposit-label">Deposit due now</span>
+          <span class="fbl-deposit-label">Deposit due now (<?php echo esc_html(number_format(fbl_get_rate_settings()['deposit_rate'], 0)); ?>%)</span>
           <span id="fbl-deposit"></span>
         </div>
         <div class="fbl-deposit-line">

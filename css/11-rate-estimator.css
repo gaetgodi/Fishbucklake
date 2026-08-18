@@ -368,10 +368,10 @@ line is unchanged from the original.
   font-weight: 400;
 }
 
-/* Shared currency picker - one instance per page, fixed
-   corner widget so it works the same on the estimator page
-   and on plain Divi Text content (e.g. /rates/) without
-   needing to know the surrounding markup. */
+/* Shared currency picker. Default shape is a fixed corner widget,
+   used on pages with only bare [fbl_rate] figures and no estimator
+   (e.g. /rates/) - there's no estimator block to embed it in, so it
+   has to work floating over whatever Divi layout it lands on. */
 .fbl-currency-picker {
   position: fixed;
   right: 1rem;
@@ -397,6 +397,11 @@ line is unchanged from the original.
   font-size: 0.78rem;
   cursor: pointer;
 }
+.fbl-currency-rate {
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  color: #8a9088;
+}
 
 @media (max-width: 500px) {
   .fbl-currency-picker {
@@ -405,4 +410,27 @@ line is unchanged from the original.
     bottom: 0.5rem;
     text-align: center;
   }
+}
+
+/* Embedded variant: the [fbl_rate_estimator] widget (js/currency-
+   converter.js's buildSelector()) renders the picker as part of its
+   own flow here instead of the fixed corner widget above - below the
+   deposit/balance lines, above the converted-total row it controls. */
+.fbl-currency-picker--embedded {
+  position: static;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  margin-top: 1rem;
+  padding: 1rem 0 0 0;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--fbl-border);
+  border-radius: 0;
+  box-shadow: none;
+  text-align: center;
+  color: var(--fbl-text-dim);
+}
+.fbl-currency-picker--embedded .fbl-currency-rate {
+  color: var(--fbl-text-dim);
 }

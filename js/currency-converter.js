@@ -23,6 +23,20 @@
 
   var STORAGE_KEY = 'fbl_currency';
 
+  // Display names for the dropdown - fblFxData only carries codes (that's
+  // all conversion needs), so this is a small static lookup rather than
+  // fetching anything extra. Falls back to the bare code for anything not
+  // listed, so adding a currency to FBL_FX_CURRENCIES server-side doesn't
+  // require touching this file to keep working.
+  var CURRENCY_NAMES = {
+    USD: 'US Dollar',
+    CAD: 'Canadian Dollar',
+    EUR: 'Euro',
+    GBP: 'British Pound',
+    CNY: 'Chinese Yuan',
+    JPY: 'Japanese Yen'
+  };
+
   function fmt(amount, code) {
     // Let Intl handle per-currency decimal rules (JPY = 0, most
     // others = 2) instead of hardcoding a decimals table.
@@ -43,13 +57,21 @@
   }
 
   /* ---------------------------------------------------------
-     Selector - one shared control per page, fixed corner widget
-     so it works the same regardless of where it lands in the
-     Divi layout (estimator page vs. rates page prose).
+     Selector - embedded in the rate estimator widget when one is
+     present on the page (.fbl-calc-wrap), rendered as part of that
+     block below the deposit/balance lines rather than floating over
+     it. Pages with only bare [fbl_rate] figures and no estimator
+     (e.g. /rates/) have no .fbl-calc-wrap to embed into, so they get
+     the original page-global fixed corner widget instead - one
+     picker still needs to exist somewhere for those figures to be
+     convertible.
      --------------------------------------------------------- */
   function buildSelector() {
+    var host     = document.querySelector('.fbl-calc-wrap');
+    var embedded = !!host;
+
     var wrap = document.createElement('div');
-    wrap.className = 'fbl-currency-picker';
+    wrap.className = 'fbl-currency-picker' + (embedded ? ' fbl-currency-picker--embedded' : '');
 
     var label = document.createElement('label');
     label.textContent = 'Show prices in ';
@@ -60,13 +82,13 @@
 
     var usdOpt = document.createElement('option');
     usdOpt.value = 'USD';
-    usdOpt.textContent = 'USD';
+    usdOpt.textContent = 'USD — ' + CURRENCY_NAMES.USD;
     select.appendChild(usdOpt);
 
     CODES.forEach(function (code) {
       var opt = document.createElement('option');
       opt.value = code;
-      opt.textContent = code;
+      opt.textContent = code + ' — ' + (CURRENCY_NAMES[code] || code);
       select.appendChild(opt);
     });
 
@@ -79,9 +101,33 @@
 
     label.appendChild(select);
     wrap.appendChild(label);
-    document.body.appendChild(wrap);
+
+    // Live rate, from the same fx table already driving conversion -
+    // no separate fetch. Hidden for USD (1 USD = 1 USD isn't worth a
+    // line), same convention as the fx-row/price-figure hide-on-USD.
+    var rateNote = document.createElement('div');
+    rateNote.className = 'fbl-currency-rate';
+    rateNote.id = 'fbl-currency-rate';
+    wrap.appendChild(rateNote);
+
+    if (embedded) {
+      var fxRow = host.querySelector('#fbl-fx-row');
+      if (fxRow) {
+        host.insertBefore(wrap, fxRow); // picker controls what fx-row shows, so it reads above it
+      } else {
+        host.appendChild(wrap);
+      }
+    } else {
+      document.body.appendChild(wrap);
+    }
 
     return select;
+  }
+
+  function updateRateNote(code) {
+    var note = document.getElementById('fbl-currency-rate');
+    if (!note) return;
+    note.textContent = (code === 'USD') ? '' : '1 USD = ' + RATES[code].toFixed(2) + ' ' + code;
   }
 
   /* ---------------------------------------------------------
@@ -129,6 +175,7 @@
   function updateAll() {
     var code = getCurrency();
     updatePriceFigures(code);
+    updateRateNote(code);
 
     var fxRow = document.getElementById('fbl-fx-row');
     if (fxRow && typeof fblLastTotal !== 'undefined') {
