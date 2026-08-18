@@ -15,7 +15,8 @@
    --------------------------------------------------------- */
 function fbl_rate_settings_defaults() {
     return array(
-        'tax_rate' => 13.0,
+        'tax_rate'     => 13.0,
+        'deposit_rate' => 15.0, // matches the "15% of the total price" hardcoded on /rates/ and /rez-calendar/
         'plans'    => array(
             'cabin' => array(
                 'label'      => 'Cabin',
@@ -93,6 +94,10 @@ function fbl_get_rate_settings() {
         $out['tax_rate'] = (float) $saved['tax_rate'];
     }
 
+    if (isset($saved['deposit_rate']) && is_numeric($saved['deposit_rate']) && (float) $saved['deposit_rate'] >= 0 && (float) $saved['deposit_rate'] <= 100) {
+        $out['deposit_rate'] = (float) $saved['deposit_rate'];
+    }
+
     foreach ($defaults['plans'] as $plan_key => $plan_defaults) {
         if (!isset($saved['plans'][$plan_key]) || !is_array($saved['plans'][$plan_key])) continue;
         foreach ($plan_defaults as $field => $default_val) {
@@ -140,8 +145,8 @@ add_action('admin_init', function() {
 
     add_settings_section(
         'fbl_rate_section_tax',
-        'Tax',
-        function() { echo '<p>Applied to the pre-tax total in the rate estimator.</p>'; },
+        'Tax & Deposit',
+        function() { echo '<p>Tax is applied to the pre-tax total in the rate estimator. Deposit is a percentage of the total price, quoted via <code>[fbl_rate item="deposit"]</code> on the Rates and Booking pages - it is not itself a dollar figure, so it isn\'t affected by the currency converter.</p>'; },
         'fbl-rates'
     );
 
@@ -153,6 +158,20 @@ add_action('admin_init', function() {
             printf(
                 '<input type="number" step="0.01" min="0" max="100" name="fbl_rate_settings[tax_rate]" value="%s" class="small-text" required> %%',
                 esc_attr($s['tax_rate'])
+            );
+        },
+        'fbl-rates',
+        'fbl_rate_section_tax'
+    );
+
+    add_settings_field(
+        'fbl_deposit_rate',
+        'Deposit rate (%)',
+        function() {
+            $s = fbl_get_rate_settings();
+            printf(
+                '<input type="number" step="0.01" min="0" max="100" name="fbl_rate_settings[deposit_rate]" value="%s" class="small-text" required> %%',
+                esc_attr($s['deposit_rate'])
             );
         },
         'fbl-rates',
@@ -241,6 +260,14 @@ function fbl_sanitize_rate_settings($input) {
             $out['tax_rate'] = round((float) $input['tax_rate'], 2);
         } else {
             add_settings_error('fbl_rate_settings', 'fbl_tax_rate_invalid', 'Tax rate must be a number between 0 and 100. Previous value kept.');
+        }
+    }
+
+    if (isset($input['deposit_rate'])) {
+        if (is_numeric($input['deposit_rate']) && (float) $input['deposit_rate'] >= 0 && (float) $input['deposit_rate'] <= 100) {
+            $out['deposit_rate'] = round((float) $input['deposit_rate'], 2);
+        } else {
+            add_settings_error('fbl_rate_settings', 'fbl_deposit_rate_invalid', 'Deposit rate must be a number between 0 and 100. Previous value kept.');
         }
     }
 
@@ -579,6 +606,14 @@ add_shortcode('fbl_rate', function($atts) {
 
     if ($item === 'tax') {
         $value = $settings['tax_rate'];
+        return '<span class="fbl-rate-figure">' . esc_html(number_format($value, 0)) . '%</span>';
+    }
+
+    if ($item === 'deposit') {
+        // Percentage of the (variable) total price, not a dollar figure -
+        // no data-fbl-usd here, same treatment as tax/childPercent above,
+        // so the currency converter correctly leaves it alone.
+        $value = $settings['deposit_rate'];
         return '<span class="fbl-rate-figure">' . esc_html(number_format($value, 0)) . '%</span>';
     }
 
