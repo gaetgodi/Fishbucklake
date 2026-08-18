@@ -36,6 +36,36 @@ function fbl_rate_settings_defaults() {
                 'pet'        => 100.00,
             ),
         ),
+
+        // Verbatim from the /rates/ page's hardcoded Divi Code module,
+        // as of the boat-description editability change - so nothing
+        // changes on first load. "standard" and "premium" each held a
+        // single <li>; "outpost" held two (boat + motor), concatenated
+        // here into one per the client's go-ahead so the schema stays
+        // one field per plan section.
+        'boat_descriptions' => array(
+            'standard' => 'Well maintained, 14 ft aluminum boat with 15 hp Yamaha electric start motor, swivel seats, depth finder, landing net, bait bucket, safety kit, and life preservers',
+            'premium'  => "16' Mirrocraft boat with 30hp Yamaha electric start motor with power tilt, RPM speed control, live well, rod storage, pedestal bucket seats, flat bottom floors, depth finder, landing net, bait bucket, safety kit and life preservers",
+            'outpost'  => "14' Lund boats with swivel seats, landing nets, bait buckets, paddle and safety kit, powered by 9.9HP or 15HP motors",
+        ),
+    );
+}
+
+/**
+ * Formatting allowed in the boat-description textareas: enough to bold
+ * or italicize a phrase or break a line, nothing that could inject a
+ * link, script, or block-level markup into the middle of Divi Code
+ * module content. Shared between the sanitize callback (write) and
+ * fbl_get_rate_settings() (read, for values that reached the DB some
+ * other way).
+ */
+function fbl_boat_description_allowed_tags() {
+    return array(
+        'strong' => array(),
+        'b'      => array(),
+        'em'     => array(),
+        'i'      => array(),
+        'br'     => array(),
     );
 }
 
@@ -72,6 +102,18 @@ function fbl_get_rate_settings() {
             $val = $saved['plans'][$plan_key][$field];
             if (is_numeric($val) && (float) $val >= 0) {
                 $out['plans'][$plan_key][$field] = (float) $val;
+            }
+            // else: leave $out at the built-in default for this field
+        }
+    }
+
+    if (isset($saved['boat_descriptions']) && is_array($saved['boat_descriptions'])) {
+        foreach ($defaults['boat_descriptions'] as $key => $default_text) {
+            if (!isset($saved['boat_descriptions'][$key]) || !is_string($saved['boat_descriptions'][$key])) continue;
+
+            $clean = trim(wp_kses($saved['boat_descriptions'][$key], fbl_boat_description_allowed_tags()));
+            if ($clean !== '') {
+                $out['boat_descriptions'][$key] = $clean;
             }
             // else: leave $out at the built-in default for this field
         }
@@ -152,6 +194,36 @@ add_action('admin_init', function() {
             );
         }
     }
+
+    add_settings_section(
+        'fbl_rate_section_boat_descriptions',
+        'Boat Descriptions',
+        function() { echo '<p>Shown on the Rates page via <code>[fbl_boat_description plan="standard|premium|outpost"]</code>. Basic formatting only: <code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>, <code>&lt;br&gt;</code> - everything else (including links) is stripped on save.</p>'; },
+        'fbl-rates'
+    );
+
+    $boat_description_labels = array(
+        'standard' => 'Standard Boat Package',
+        'premium'  => 'Premium Boat Package',
+        'outpost'  => 'Outpost',
+    );
+
+    foreach ($boat_description_labels as $key => $label) {
+        add_settings_field(
+            'fbl_boat_description_' . $key,
+            $label,
+            function() use ($key) {
+                $s = fbl_get_rate_settings();
+                printf(
+                    '<textarea name="fbl_rate_settings[boat_descriptions][%s]" rows="3" class="large-text" required>%s</textarea>',
+                    esc_attr($key),
+                    esc_textarea($s['boat_descriptions'][$key])
+                );
+            },
+            'fbl-rates',
+            'fbl_rate_section_boat_descriptions'
+        );
+    }
 });
 
 /**
@@ -190,6 +262,29 @@ function fbl_sanitize_rate_settings($input) {
                         ucfirst($plan_key) . ' "' . $field . '" must be a non-negative number. Previous value kept.'
                     );
                 }
+            }
+        }
+    }
+
+    if (isset($input['boat_descriptions']) && is_array($input['boat_descriptions'])) {
+        foreach ($current['boat_descriptions'] as $key => $current_text) {
+            if (!isset($input['boat_descriptions'][$key])) continue;
+
+            // options.php hands the sanitize_callback the raw, magic-quote
+            // -slashed $_POST value (WP does not unslash before calling
+            // it) - wp_unslash() first or an apostrophe like "14' Lund"
+            // gets a literal backslash baked into the stored option.
+            $raw   = wp_unslash($input['boat_descriptions'][$key]);
+            $clean = trim(wp_kses($raw, fbl_boat_description_allowed_tags()));
+
+            if ($clean !== '') {
+                $out['boat_descriptions'][$key] = $clean;
+            } else {
+                add_settings_error(
+                    'fbl_rate_settings',
+                    'fbl_boat_description_' . $key . '_invalid',
+                    ucfirst($key) . ' boat description cannot be empty. Previous value kept.'
+                );
             }
         }
     }
@@ -499,6 +594,15 @@ add_shortcode('fbl_rate', function($atts) {
     if ($item === 'premiumBase') {
         $p = $settings['plans'][$plan];
         $value = $p['base'] + $p['adultBoat'];
+    } elseif ($item === 'childPercent') {
+        // Derived like premiumBase above - not a persisted field. Used
+        // for the "children are charged at X% of the adult rate" policy
+        // copy on /rates/ and /rez-calendar/, which was previously a
+        // hardcoded "50%"/"half" independent of the child/base fields
+        // it actually describes.
+        $p = $settings['plans'][$plan];
+        $value = $p['base'] > 0 ? round(($p['child'] / $p['base']) * 100) : 0;
+        return '<span class="fbl-rate-figure">' . esc_html($value) . '%</span>';
     } elseif (isset($settings['plans'][$plan][$item])) {
         $value = $settings['plans'][$plan][$item];
     } else {
@@ -510,4 +614,29 @@ add_shortcode('fbl_rate', function($atts) {
         esc_attr(number_format($value, 2, '.', '')),
         esc_html(number_format($value, 2))
     );
+});
+
+/* ---------------------------------------------------------
+   [fbl_boat_description plan="standard|premium|outpost"]
+   Editable replacement for the boat spec text that used to be
+   hardcoded inside the /rates/ page's Divi Code module. The
+   value returned is already wp_kses()'d - on save by
+   fbl_sanitize_rate_settings() and again on read by
+   fbl_get_rate_settings() - to a small allow-list (see
+   fbl_boat_description_allowed_tags()), so it's safe to print
+   as-is; escaping it again here would mangle the allowed tags.
+   ========================================================= */
+add_shortcode('fbl_boat_description', function($atts) {
+    $atts = shortcode_atts(array(
+        'plan' => 'standard',
+    ), $atts, 'fbl_boat_description');
+
+    $settings = fbl_get_rate_settings();
+    $plan     = $atts['plan'];
+
+    if (!isset($settings['boat_descriptions'][$plan])) {
+        return ''; // unknown plan - fail quietly rather than print nothing useful
+    }
+
+    return $settings['boat_descriptions'][$plan];
 });

@@ -57,10 +57,25 @@ function fbl_get_fx_rates() {
     $cached = get_transient(FBL_FX_TRANSIENT);
     if ($cached !== false) return $cached;
 
-    // Transient expired (or first run) - try a synchronous refetch
-    // so a visitor isn't stuck without rates until the next cron
-    // tick; on failure this returns false and the converter hides.
-    return fbl_fetch_fx_rates();
+    // Transient expired (or first run, or cache flush) - fetch
+    // synchronously so a visitor isn't stuck without rates until the
+    // next cron tick. Guard with a short-lived lock so a burst of
+    // concurrent requests hitting this same gap don't all call the
+    // API at once: wp_cache_add() only succeeds for the first caller
+    // (atomic add-if-absent on every persistent object-cache backend
+    // this site could run - Redis/Memcached; on the default per-request
+    // cache it's a no-op, which just means no cross-request locking,
+    // not incorrect behaviour). Callers that lose the race get false
+    // for this one request and hide the converter - the winner's
+    // fetch populates the transient for everyone after it.
+    if (!wp_cache_add('fbl_fx_fetch_lock', 1, '', 10)) {
+        return false;
+    }
+
+    $result = fbl_fetch_fx_rates();
+    wp_cache_delete('fbl_fx_fetch_lock');
+
+    return $result;
 }
 
 /* ---------------------------------------------------------
