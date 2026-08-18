@@ -609,8 +609,12 @@ add_shortcode('fbl_rate_estimator', function() {
    ========================================================= */
 add_shortcode('fbl_rate', function($atts) {
     $atts = shortcode_atts(array(
-        'plan' => 'cabin',
-        'item' => 'base',
+        'plan'   => 'cabin',
+        'item'   => 'base',
+        'suffix' => '', // e.g. suffix="(USD)" - rendered inside the .fbl-price span,
+                         // right after the dollar figure and before the ≈-converted
+                         // .fbl-price-fx figure, so it stays attached to the source
+                         // USD amount instead of ending up after the conversion.
     ), $atts, 'fbl_rate');
 
     $settings = fbl_get_rate_settings();
@@ -657,10 +661,13 @@ add_shortcode('fbl_rate', function($atts) {
         return ''; // unknown item - fail quietly rather than print a wrong number
     }
 
+    $suffix = ($atts['suffix'] !== '') ? ' ' . esc_html($atts['suffix']) : '';
+
     return sprintf(
-        '<span class="fbl-price" data-fbl-usd="%s">$%s <span class="fbl-price-fx"></span></span>',
+        '<span class="fbl-price" data-fbl-usd="%s">$%s%s <span class="fbl-price-fx"></span></span>',
         esc_attr(number_format($value, 2, '.', '')),
-        esc_html(number_format($value, 2))
+        esc_html(number_format($value, 2)),
+        $suffix
     );
 });
 

@@ -94,12 +94,14 @@ function fblLine(label, amount) {
   </div>`;
 }
 
-// Same .fbl-price/data-fbl-usd shape [fbl_rate] renders server-side, so the
+// Same .fbl-price/data-fbl-usd shape [fbl_rate] renders server-side
+// (inc/rate-estimator.php, including the "(USD)" placement right after the
+// source figure and before the ≈-converted .fbl-price-fx figure), so the
 // currency converter's generic .fbl-price walk (js/currency-converter.js)
 // picks these up with no special-casing - see fblRefreshCurrencyDisplay()
 // below.
 function fblPriceSpan(usd) {
-  return `<span class="fbl-price" data-fbl-usd="${usd.toFixed(2)}">${fblFmt(usd)} <span class="fbl-price-fx"></span></span>`;
+  return `<span class="fbl-price" data-fbl-usd="${usd.toFixed(2)}">${fblFmt(usd)} (USD) <span class="fbl-price-fx"></span></span>`;
 }
 
 var fblLastTotal = 0;
