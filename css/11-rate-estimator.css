@@ -297,6 +297,31 @@ line is unchanged from the original.
 .fbl-total-cell.fbl-grand .fbl-total-label { color: rgba(240,236,228,0.7); }
 .fbl-total-cell.fbl-grand .fbl-total-amount { color: var(--fbl-white); font-size: 1.5rem; }
 
+/* Deposit / balance breakdown, below the totals row */
+.fbl-deposit-row {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--fbl-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.fbl-deposit-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.85rem;
+}
+.fbl-deposit-line .fbl-deposit-label {
+  color: var(--fbl-text-dim);
+  letter-spacing: 0.02em;
+}
+.fbl-deposit-line .fbl-price {
+  color: var(--fbl-gold);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Note */
 .fbl-note {
   margin-top: 1.25rem;

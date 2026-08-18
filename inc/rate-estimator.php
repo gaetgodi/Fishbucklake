@@ -366,8 +366,9 @@ function fbl_enqueue_rates_admin_preview_assets() {
 
     $settings = fbl_get_rate_settings();
     wp_localize_script('fbl-rate-estimator', 'fblRateData', array(
-        'rates'   => $settings['plans'],
-        'taxRate' => $settings['tax_rate'] / 100,
+        'rates'       => $settings['plans'],
+        'taxRate'     => $settings['tax_rate'] / 100,
+        'depositRate' => $settings['deposit_rate'] / 100,
     ));
 
     // Preset a realistic booking (2 adults, 1 child, premium boat, 1 pet)
@@ -451,8 +452,9 @@ add_action('wp_enqueue_scripts', function() {
 
         $settings = fbl_get_rate_settings();
         wp_localize_script('fbl-rate-estimator', 'fblRateData', array(
-            'rates'   => $settings['plans'],
-            'taxRate' => $settings['tax_rate'] / 100,
+            'rates'       => $settings['plans'],
+            'taxRate'     => $settings['tax_rate'] / 100,
+            'depositRate' => $settings['deposit_rate'] / 100,
         ));
     }
 }, 20);
@@ -572,6 +574,17 @@ add_shortcode('fbl_rate_estimator', function() {
         <div class="fbl-total-cell fbl-grand">
           <div class="fbl-total-label">Total</div>
           <div class="fbl-total-amount" id="fbl-total">&mdash;</div>
+        </div>
+      </div>
+
+      <div class="fbl-deposit-row" id="fbl-deposit-row">
+        <div class="fbl-deposit-line">
+          <span class="fbl-deposit-label">Deposit due now</span>
+          <span id="fbl-deposit"></span>
+        </div>
+        <div class="fbl-deposit-line">
+          <span class="fbl-deposit-label">Balance due on arrival</span>
+          <span id="fbl-balance"></span>
         </div>
       </div>
 

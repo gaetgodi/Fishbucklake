@@ -136,6 +136,12 @@
     }
   }
 
+  // Shared refresh entry point for js/rate-estimator.js: walks every
+  // .fbl-price figure generically (deposit/balance lines included, no
+  // special-casing needed there) and refreshes the dedicated #fbl-fx-row
+  // grand-total display, all from the current currency selection.
+  window.fblRefreshCurrencyDisplay = updateAll;
+
   document.addEventListener('DOMContentLoaded', function () {
     buildSelector();
     updateAll();

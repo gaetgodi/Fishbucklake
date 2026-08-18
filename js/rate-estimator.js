@@ -7,8 +7,9 @@
    inc/rate-estimator.php from the fbl_rate_settings option.
    ========================================================= */
 
-var FBL_RATES = (typeof fblRateData !== 'undefined') ? fblRateData.rates   : {};
-var FBL_TAX   = (typeof fblRateData !== 'undefined') ? fblRateData.taxRate : 0.13;
+var FBL_RATES   = (typeof fblRateData !== 'undefined') ? fblRateData.rates       : {};
+var FBL_TAX     = (typeof fblRateData !== 'undefined') ? fblRateData.taxRate     : 0.13;
+var FBL_DEPOSIT = (typeof fblRateData !== 'undefined') ? fblRateData.depositRate : 0.15;
 
 var fblPlan = 'cabin';
 
@@ -93,6 +94,14 @@ function fblLine(label, amount) {
   </div>`;
 }
 
+// Same .fbl-price/data-fbl-usd shape [fbl_rate] renders server-side, so the
+// currency converter's generic .fbl-price walk (js/currency-converter.js)
+// picks these up with no special-casing - see fblRefreshCurrencyDisplay()
+// below.
+function fblPriceSpan(usd) {
+  return `<span class="fbl-price" data-fbl-usd="${usd.toFixed(2)}">${fblFmt(usd)} <span class="fbl-price-fx"></span></span>`;
+}
+
 var fblLastTotal = 0;
 
 function fblCalc() {
@@ -138,9 +147,23 @@ function fblCalc() {
 
   fblLastTotal = total;
 
-  // Currency converter (js/currency-converter.js) hooks in here if present.
-  if (typeof fblUpdateFxDisplay === 'function') {
-    fblUpdateFxDisplay(total, document.getElementById('fbl-fx-row'));
+  // Deposit is calculated on the POST-TAX total (15% of `total`, not
+  // `pretax`). The client's copy ("A deposit of 15% of the total
+  // price...") doesn't say pre-tax or post-tax explicitly, so this is
+  // a reasonable-reading assumption, not a confirmed business rule -
+  // flip to `pretax * FBL_DEPOSIT` here (and adjust `balance` to match)
+  // if the client says otherwise.
+  const deposit = total * FBL_DEPOSIT;
+  const balance = total - deposit;
+
+  document.getElementById('fbl-deposit').innerHTML = fblPriceSpan(deposit);
+  document.getElementById('fbl-balance').innerHTML = fblPriceSpan(balance);
+
+  // Currency converter (js/currency-converter.js) hooks in here if present -
+  // one call refreshes both the dedicated #fbl-fx-row grand-total display
+  // and every .fbl-price figure above, deposit/balance included.
+  if (typeof fblRefreshCurrencyDisplay === 'function') {
+    fblRefreshCurrencyDisplay();
   }
 }
 
