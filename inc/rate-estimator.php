@@ -2,12 +2,26 @@
 /* =========================================================
    FBL RATE ESTIMATOR - single source of truth for rates
    - wp_options row: fbl_rate_settings
-   - Admin screen (Settings API, manage_options)
+   - Admin screen (Settings API, manage_fbl_rates)
    - [fbl_rate_estimator] - the live calculator (moved out of
      the Divi Code module that used to live on /rez-calendar/)
    - [fbl_rate plan="cabin" item="base"] - single formatted
      figure for use inside Divi Text content (e.g. /rates/)
    ========================================================= */
+
+/* ---------------------------------------------------------
+   Capabilities (mirrors catch-of-day / gallery-builder pattern -
+   grant a feature-specific cap to the built-in editor role
+   rather than gating on manage_options, so Shannon/Nev's
+   existing editor accounts get this screen like the others)
+   --------------------------------------------------------- */
+add_action('admin_init', function() {
+    $editor = get_role('editor');
+    $admin  = get_role('administrator');
+
+    if ($editor) $editor->add_cap('manage_fbl_rates');
+    if ($admin)  $admin->add_cap('manage_fbl_rates');
+});
 
 /* ---------------------------------------------------------
    Defaults - match what was hardcoded in the old Divi Code
@@ -133,6 +147,13 @@ function fbl_get_rate_settings() {
    covers the "never saved yet" case for reads before that.
    --------------------------------------------------------- */
 add_action('admin_init', function() {
+    // options.php enforces manage_options on every settings-group submit
+    // unless this filter says otherwise - has to be set alongside
+    // register_setting() or the form 403s for anyone without manage_options.
+    add_filter('option_page_capability_fbl_rate_settings_group', function() {
+        return 'manage_fbl_rates';
+    });
+
     register_setting(
         'fbl_rate_settings_group',
         'fbl_rate_settings',
@@ -322,14 +343,16 @@ function fbl_sanitize_rate_settings($input) {
 /* ---------------------------------------------------------
    Admin menu - mirrors inc/catch-of-day.php's convention
    (top-level add_menu_page, dashicons, positioned in the
-   same cluster the client already uses), but capability-
-   gated to manage_options per spec since this is pricing.
+   same cluster the client already uses), gated to
+   manage_fbl_rates so it lines up with the other custom
+   editor capabilities (manage_fbl_gallery etc.) instead of
+   manage_options.
    --------------------------------------------------------- */
 add_action('admin_menu', function() {
     $hook = add_menu_page(
         'Rate Settings',
         'Rates',
-        'manage_options',
+        'manage_fbl_rates',
         'fbl-rates',
         'fbl_rates_admin_page',
         'dashicons-money-alt',
@@ -387,7 +410,7 @@ function fbl_enqueue_rates_admin_preview_assets() {
 }
 
 function fbl_rates_admin_page() {
-    if (!current_user_can('manage_options')) return;
+    if (!current_user_can('manage_fbl_rates')) return;
     ?>
     <div class="wrap">
         <h1>Rate Estimator Settings</h1>
