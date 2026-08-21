@@ -141,6 +141,28 @@ function fbl_get_rate_settings() {
     return $out;
 }
 
+/**
+ * Single read path for the brochure PDF, mirroring
+ * fbl_get_rate_settings() above: re-validates on every read (not just
+ * on save) so a removed/retyped attachment, or a raw option written
+ * outside the settings form, can never silently point at a dead file.
+ * Returns 0 (falsy) whenever there's no usable PDF - both
+ * [fbl_brochure_form] and fbl-contact-system.php's send_brochure_reply()
+ * treat that as "no PDF configured yet" and fall back accordingly.
+ */
+function fbl_get_brochure_pdf_id() {
+    $id = (int) get_option('fbl_brochure_pdf_id', 0);
+
+    if ($id <= 0) return 0;
+    if (get_post_type($id) !== 'attachment') return 0;
+    if (get_post_mime_type($id) !== 'application/pdf') return 0;
+
+    $file = get_attached_file($id);
+    if (!$file || !file_exists($file)) return 0;
+
+    return $id;
+}
+
 /* ---------------------------------------------------------
    Settings API registration - creates the option with
    defaults on first save; fbl_get_rate_settings() above
@@ -264,7 +286,134 @@ add_action('admin_init', function() {
             'fbl_rate_section_boat_descriptions'
         );
     }
+
+    /* -----------------------------------------------------
+       Brochure PDF - a separate option (fbl_brochure_pdf_id),
+       not a key on fbl_rate_settings: it's not a rate figure,
+       doesn't belong in the fblRateData JS payload, and needs
+       attachment-type validation rather than the numeric/text
+       checks the rest of this file's sanitize callback does.
+       Still on this same screen/capability/save button via a
+       second register_setting() under the same settings group.
+       ----------------------------------------------------- */
+    register_setting(
+        'fbl_rate_settings_group',
+        'fbl_brochure_pdf_id',
+        array(
+            'type'              => 'integer',
+            'sanitize_callback' => 'fbl_sanitize_brochure_pdf_id',
+            'default'           => 0,
+        )
+    );
+
+    add_settings_section(
+        'fbl_rate_section_brochure',
+        'Brochure PDF',
+        function() { echo '<p>Sent as an email attachment to visitors who request it via <code>[fbl_brochure_form]</code> on the Brochure page. Until a PDF is uploaded here, that page shows a "coming soon" message linking to Contact Us instead of a request form.</p>'; },
+        'fbl-rates'
+    );
+
+    add_settings_field(
+        'fbl_brochure_pdf_id',
+        'Brochure PDF',
+        'fbl_render_brochure_pdf_field',
+        'fbl-rates',
+        'fbl_rate_section_brochure'
+    );
 });
+
+/**
+ * Renders the brochure PDF media-uploader field. A standard
+ * wp.media() attachment picker restricted to application/pdf, backed
+ * by a hidden input carrying the attachment ID - the only thing this
+ * settings field actually saves.
+ */
+function fbl_render_brochure_pdf_field() {
+    $id       = fbl_get_brochure_pdf_id();
+    $filename = $id ? basename(get_attached_file($id)) : '';
+    $url      = $id ? wp_get_attachment_url($id) : '';
+    ?>
+    <input type="hidden" name="fbl_brochure_pdf_id" id="fbl_brochure_pdf_id_input" value="<?php echo esc_attr($id); ?>">
+
+    <p id="fbl-brochure-pdf-current" <?php if (!$id) echo 'style="display:none;"'; ?>>
+        Current file:
+        <a href="<?php echo esc_url($url); ?>" target="_blank" rel="noopener noreferrer" id="fbl-brochure-pdf-link"><?php echo esc_html($filename); ?></a>
+        &nbsp;<button type="button" class="button" id="fbl-brochure-pdf-remove">Remove</button>
+    </p>
+    <p id="fbl-brochure-pdf-none" <?php if ($id) echo 'style="display:none;"'; ?>>
+        <em>No PDF uploaded yet.</em>
+    </p>
+    <button type="button" class="button" id="fbl-brochure-pdf-upload">Select PDF&hellip;</button>
+
+    <script>
+    (function () {
+        var frame;
+        var uploadBtn = document.getElementById('fbl-brochure-pdf-upload');
+        var removeBtn = document.getElementById('fbl-brochure-pdf-remove');
+        if (!uploadBtn) return;
+
+        uploadBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (frame) { frame.open(); return; }
+
+            frame = wp.media({
+                title: 'Select Brochure PDF',
+                library: { type: 'application/pdf' },
+                button: { text: 'Use this PDF' },
+                multiple: false
+            });
+
+            frame.on('select', function () {
+                var att = frame.state().get('selection').first().toJSON();
+                document.getElementById('fbl_brochure_pdf_id_input').value = att.id;
+                document.getElementById('fbl-brochure-pdf-link').href = att.url;
+                document.getElementById('fbl-brochure-pdf-link').textContent = att.filename;
+                document.getElementById('fbl-brochure-pdf-current').style.display = '';
+                document.getElementById('fbl-brochure-pdf-none').style.display = 'none';
+            });
+
+            frame.open();
+        });
+
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.getElementById('fbl_brochure_pdf_id_input').value = '';
+                document.getElementById('fbl-brochure-pdf-current').style.display = 'none';
+                document.getElementById('fbl-brochure-pdf-none').style.display = '';
+            });
+        }
+    })();
+    </script>
+    <?php
+}
+
+/**
+ * Sanitize + validate the brochure PDF selection. Same "reject and
+ * keep the previous value" convention as fbl_sanitize_rate_settings()
+ * above, rather than silently clearing it on a bad submission.
+ */
+function fbl_sanitize_brochure_pdf_id($input) {
+    $input = trim((string) $input);
+
+    if ($input === '' || $input === '0') {
+        return 0;
+    }
+
+    $id = absint($input);
+
+    if ($id <= 0 || get_post_type($id) !== 'attachment') {
+        add_settings_error('fbl_brochure_pdf_id', 'fbl_brochure_pdf_invalid', 'Brochure PDF selection was invalid. Previous value kept.');
+        return fbl_get_brochure_pdf_id();
+    }
+
+    if (get_post_mime_type($id) !== 'application/pdf') {
+        add_settings_error('fbl_brochure_pdf_id', 'fbl_brochure_pdf_not_pdf', 'Selected file must be a PDF. Previous value kept.');
+        return fbl_get_brochure_pdf_id();
+    }
+
+    return $id;
+}
 
 /**
  * Sanitize + validate. Non-numeric or negative input is rejected
@@ -368,6 +517,9 @@ add_action('admin_menu', function() {
 });
 
 function fbl_enqueue_rates_admin_preview_assets() {
+    // Backs the Brochure PDF field's media picker (fbl_render_brochure_pdf_field()).
+    wp_enqueue_media();
+
     wp_enqueue_style(
         'fbl-rate-estimator',
         get_stylesheet_directory_uri() . '/css/11-rate-estimator.css',
@@ -717,4 +869,103 @@ add_shortcode('fbl_boat_description', function($atts) {
     }
 
     return $settings['boat_descriptions'][$plan];
+});
+
+/* ---------------------------------------------------------
+   [fbl_brochure_form]
+   Renders the brochure request form (name + email, posts to the
+   same /wp-json/fbl/v1/contact endpoint fbl-contact-system.php
+   already exposes for /contact-us/, tagged with the "Request for
+   Brochure" category that mu-plugin already pre-registers) - or,
+   if no PDF has been uploaded on the Rates admin screen yet, a
+   "coming soon" fallback linking to /contact-us/ instead. This is
+   a shortcode rather than a static Divi code block (unlike
+   /contact-us/'s) specifically so that fallback can be decided
+   server-side, at render time, from fbl_get_brochure_pdf_id() - a
+   static block has no way to branch on that.
+   ========================================================= */
+add_shortcode('fbl_brochure_form', function() {
+    if (!fbl_get_brochure_pdf_id()) {
+        ob_start();
+        ?>
+        <div class="fbl-brochure-fallback">
+            <p>Our printable brochure is coming soon. In the meantime, please <a href="<?php echo esc_url(home_url('/contact-us/')); ?>">contact us directly</a> and we'll be happy to help.</p>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    ob_start();
+    ?>
+    <div class="fbl-brochure-form-wrap">
+      <form id="fbl-brochure-form" onsubmit="return false;">
+        <p>
+          <label for="fbl-brochure-name">Name</label><br>
+          <input type="text" id="fbl-brochure-name" name="name" required>
+        </p>
+        <p>
+          <label for="fbl-brochure-email">Email</label><br>
+          <input type="email" id="fbl-brochure-email" name="email" required>
+        </p>
+
+        <!-- Honeypot - same field name fbl-contact-system.php's
+             calculate_spam_score() already checks for on every
+             submission to this endpoint, humans never see this. -->
+        <p style="position:absolute; left:-9999px;" aria-hidden="true">
+          <label for="fbl-brochure-website">Website</label>
+          <input type="text" id="fbl-brochure-website" name="website" tabindex="-1" autocomplete="off">
+        </p>
+
+        <button type="submit" id="fbl-brochure-submit">Send Me the Brochure</button>
+        <p id="fbl-brochure-status" role="status"></p>
+      </form>
+    </div>
+    <script>
+    (function () {
+        var form = document.getElementById('fbl-brochure-form');
+        if (!form) return;
+
+        var formTime = Math.floor(Date.now() / 1000);
+
+        form.addEventListener('submit', function () {
+            var status = document.getElementById('fbl-brochure-status');
+            var btn    = document.getElementById('fbl-brochure-submit');
+            btn.disabled = true;
+            status.textContent = 'Sending...';
+
+            fetch('<?php echo esc_url_raw(rest_url('fbl/v1/contact')); ?>', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('fbl-brochure-name').value,
+                    email: document.getElementById('fbl-brochure-email').value,
+                    // Fixed message, not a visible field - name + email is
+                    // the whole form; the shared endpoint still requires a
+                    // non-empty message, so this satisfies that without
+                    // adding a textarea nobody needs to fill in.
+                    message: 'Brochure requested via the website.',
+                    category: 'Request for Brochure',
+                    website: document.getElementById('fbl-brochure-website').value,
+                    form_time: formTime
+                })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    status.textContent = 'Thanks! Check your email for the brochure.';
+                    form.reset();
+                } else {
+                    status.textContent = data.message || 'Something went wrong. Please try again or contact us directly.';
+                    btn.disabled = false;
+                }
+            })
+            .catch(function () {
+                status.textContent = 'Something went wrong. Please try again or contact us directly.';
+                btn.disabled = false;
+            });
+        });
+    })();
+    </script>
+    <?php
+    return ob_get_clean();
 });
