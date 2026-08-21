@@ -8,6 +8,6 @@ Thumbs.db
 node_modules/
 css.backup
 style.css.backup
-*.code-workspaceSEO_AUDIT_*.md
+*.code-workspace
 SEO_AUDIT_*.md
-9340dbe (Remove SEO audit report from repo; add to gitignore)
+REDIRECT_NO_EQUIVALENT.md
