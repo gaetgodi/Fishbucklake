@@ -163,6 +163,18 @@ function fbl_get_brochure_pdf_id() {
     return $id;
 }
 
+/**
+ * Whether FAQ search Demo Mode is currently on. Read by
+ * fbl-faq-search-system.php (mu-plugin, deployed separately - see that
+ * file's header) to decide the per-visitor rate limit: 30/10min instead
+ * of the normal 5/10min while this is enabled. Lives as its own option
+ * rather than a fbl_rate_settings key since it's a live on/off switch,
+ * not a saved rate figure.
+ */
+function fbl_faqsearch_demo_mode_enabled() {
+    return (bool) get_option('fbl_faqsearch_demo_mode', false);
+}
+
 /* ---------------------------------------------------------
    Settings API registration - creates the option with
    defaults on first save; fbl_get_rate_settings() above
@@ -319,6 +331,54 @@ add_action('admin_init', function() {
         'fbl_render_brochure_pdf_field',
         'fbl-rates',
         'fbl_rate_section_brochure'
+    );
+
+    /* -----------------------------------------------------
+       FAQ Search Demo Mode - a separate option (fbl_faqsearch_demo_mode),
+       same reasoning as the brochure PDF above: not a rate figure, on
+       its own register_setting() under the same settings group so it
+       still saves via this one screen/button. Read by
+       fbl-faq-search-system.php (mu-plugin) to raise the per-visitor
+       rate limit while showing the search box to someone live.
+       ----------------------------------------------------- */
+    register_setting(
+        'fbl_rate_settings_group',
+        'fbl_faqsearch_demo_mode',
+        array(
+            'type'              => 'boolean',
+            'sanitize_callback' => function($input) { return !empty($input); },
+            'default'           => false,
+        )
+    );
+
+    add_settings_section(
+        'fbl_rate_section_faqsearch_demo',
+        'FAQ Search Demo Mode',
+        '__return_false',
+        'fbl-rates'
+    );
+
+    add_settings_field(
+        'fbl_faqsearch_demo_mode',
+        'Demo Mode',
+        function() {
+            $checked = fbl_faqsearch_demo_mode_enabled();
+            ?>
+            <label>
+                <input type="checkbox" name="fbl_faqsearch_demo_mode" value="1" <?php checked($checked); ?>>
+                Enable Demo Mode
+            </label>
+            <p class="description" style="max-width: 640px;">
+                Demo Mode temporarily raises the FAQ search's per-visitor limit from 5 to 30
+                questions every 10 minutes. Turn it on when you're showing the search box to
+                someone in person, so a normal demo doesn't get cut off by the usual limit.
+                Remember to switch it back off when you're done &mdash; it's meant for demos,
+                not everyday browsing.
+            </p>
+            <?php
+        },
+        'fbl-rates',
+        'fbl_rate_section_faqsearch_demo'
     );
 });
 

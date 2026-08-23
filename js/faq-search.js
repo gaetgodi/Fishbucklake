@@ -41,10 +41,20 @@
 
         var FALLBACK_MESSAGE = 'Please browse the FAQs below or <a href="/contact-us/">contact us</a>.';
 
-        function showResult(html, isError) {
+        // "reason" distinguishes the server's non-answer cases (see
+        // fbl-faq-search-system.php): rate_limited / daily_limit / unavailable.
+        // Each already carries its own wording from the server - the
+        // data-reason attribute here is just so that's inspectable/stylable
+        // per case rather than everything collapsing into one generic look.
+        function showResult(html, isError, reason) {
             result.innerHTML = html;
             result.classList.add('is-visible');
             result.classList.toggle('is-error', !!isError);
+            if (reason) {
+                result.setAttribute('data-reason', reason);
+            } else {
+                result.removeAttribute('data-reason');
+            }
         }
 
         form.addEventListener('submit', function (e) {
@@ -72,16 +82,18 @@
                 })
                 .then(function (data) {
                     if (data && data.success && data.answer) {
-                        showResult(data.answer, false);
+                        showResult(data.answer, false, null);
                     } else if (data && data.answer) {
-                        // Server-side fallback response (rate limited / API down).
-                        showResult(data.answer, true);
+                        // Server-side fallback: rate_limited, daily_limit, or
+                        // unavailable (API/config/context failure) - the
+                        // "reason" picks which of the three this was.
+                        showResult(data.answer, true, data.reason);
                     } else {
-                        showResult(FALLBACK_MESSAGE, true);
+                        showResult(FALLBACK_MESSAGE, true, 'unavailable');
                     }
                 })
                 .catch(function () {
-                    showResult(FALLBACK_MESSAGE, true);
+                    showResult(FALLBACK_MESSAGE, true, 'unavailable');
                 })
                 .finally(function () {
                     button.disabled = false;
