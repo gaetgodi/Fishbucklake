@@ -11,3 +11,5 @@ style.css.backup
 *.code-workspace
 SEO_AUDIT_*.md
 REDIRECT_NO_EQUIVALENT.md
+docs/
+session-summary.md
