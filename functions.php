@@ -26,4 +26,5 @@ require_once get_stylesheet_directory() . '/inc/media-curator.php';
 require_once get_stylesheet_directory() . '/inc/flickr-import.php';
 require_once get_stylesheet_directory() . '/inc/folder-usage.php';
 require_once get_stylesheet_directory() . '/inc/rate-estimator.php';
+require_once get_stylesheet_directory() . '/inc/brochure-generator.php';
 require_once get_stylesheet_directory() . '/inc/currency-converter.php';

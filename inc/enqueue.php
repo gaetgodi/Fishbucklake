@@ -100,6 +100,22 @@ add_action('wp_enqueue_scripts', function() {
             filemtime(get_stylesheet_directory() . '/js/faq-system.js'),
             true
         );
+
+        // AI FAQ Search - box injected above #faqContainer via JS.
+        wp_enqueue_style(
+            'fbl-faq-search',
+            get_stylesheet_directory_uri() . '/css/faq-search.css',
+            array('fbl-faq'),
+            filemtime(get_stylesheet_directory() . '/css/faq-search.css')
+        );
+
+        wp_enqueue_script(
+            'fbl-faq-search',
+            get_stylesheet_directory_uri() . '/js/faq-search.js',
+            array(),
+            filemtime(get_stylesheet_directory() . '/js/faq-search.js'),
+            true
+        );
     }
 }, 999);
 

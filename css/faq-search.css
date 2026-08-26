@@ -1,0 +1,123 @@
+/*
+=================================================
+faq-search.css
+AI FAQ Search box - sits above the existing FAQ
+list on /faqs/. Reuses the FAQ component's design
+tokens (css/faq.css) so it reads as part of the
+same block, not a bolted-on widget.
+=================================================
+*/
+
+.fbl-faq-search {
+    max-width: 720px;
+    margin: 0 auto var(--fbl-space-xl);
+    padding: var(--fbl-space-lg) var(--fbl-space-md);
+    background: var(--fbl-faq-answer-bg);
+    border: 1px solid var(--fbl-gold);
+    border-radius: var(--fbl-radius-lg);
+}
+
+.fbl-faq-search__title {
+    margin: 0 0 var(--fbl-space-sm);
+    color: var(--fbl-gold);
+    font-family: var(--fbl-font-heading);
+    font-size: var(--fbl-font-lg);
+}
+
+.fbl-faq-search__hint {
+    margin: 0 0 var(--fbl-space-md);
+    color: var(--fbl-faq-answer-text-subtle);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-sm, 0.9rem);
+}
+
+.fbl-faq-search__form {
+    display: flex;
+    gap: var(--fbl-space-sm);
+    flex-wrap: wrap;
+}
+
+.fbl-faq-search__input {
+    flex: 1 1 260px;
+    padding: var(--fbl-space-sm) var(--fbl-space-md);
+    background: #fff;
+    color: var(--fbl-faq-answer-text);
+    border: 1px solid var(--fbl-faq-dropdown-border);
+    border-radius: var(--fbl-radius);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+}
+
+.fbl-faq-search__input:focus {
+    outline: none;
+    border-color: var(--fbl-faq-focus-outline);
+    box-shadow: 0 0 0 3px rgba(212, 165, 32, 0.1);
+}
+
+.fbl-faq-search__submit {
+    padding: var(--fbl-space-sm) var(--fbl-space-lg);
+    background: linear-gradient(135deg, var(--fbl-faq-gradient-start) 0%, var(--fbl-faq-gradient-end) 100%);
+    color: var(--fbl-faq-icon-bg, #333);
+    border: none;
+    border-radius: var(--fbl-radius);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.fbl-faq-search__submit:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--fbl-faq-gradient-hover-start) 0%, var(--fbl-faq-gradient-hover-end) 100%);
+}
+
+.fbl-faq-search__submit:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.fbl-faq-search__result {
+    margin-top: var(--fbl-space-md);
+    padding: var(--fbl-space-md);
+    background: #fff;
+    border-left: 3px solid var(--fbl-faq-border-active);
+    border-radius: var(--fbl-radius);
+    color: var(--fbl-faq-answer-text);
+    font-family: var(--fbl-font-body);
+    font-size: var(--fbl-font-md);
+    line-height: 1.5;
+    display: none;
+}
+
+.fbl-faq-search__result.is-visible {
+    display: block;
+}
+
+.fbl-faq-search__result a {
+    color: var(--fbl-faq-link);
+}
+
+.fbl-faq-search__result a:hover {
+    color: var(--fbl-faq-link-hover);
+}
+
+.fbl-faq-search__result.is-error {
+    border-left-color: var(--fbl-faq-no-results, #666);
+    color: var(--fbl-faq-answer-text-subtle);
+}
+
+.fbl-faq-search__spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    margin-right: var(--fbl-space-sm);
+    border: 2px solid rgba(0, 0, 0, 0.15);
+    border-top-color: var(--fbl-faq-border-active);
+    border-radius: 50%;
+    vertical-align: -0.2em;
+    animation: fbl-faq-search-spin 0.7s linear infinite;
+}
+
+@keyframes fbl-faq-search-spin {
+    to { transform: rotate(360deg); }
+}
