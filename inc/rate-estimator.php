@@ -59,7 +59,7 @@ function fbl_rate_settings_defaults() {
         // here into one per the client's go-ahead so the schema stays
         // one field per plan section.
         'boat_descriptions' => array(
-            'standard' => 'Well maintained, 14 ft aluminum boat with 15 hp Yamaha electric start motor, swivel seats, depth finder, landing net, bait bucket, safety kit, and life preservers',
+            'standard' => 'Well maintained, 16 ft aluminum boat with 20 hp Yamaha electric start motor, swivel seats, depth finder, landing net, bait bucket, safety kit, and life preservers',
             'premium'  => "16' Mirrocraft boat with 30hp Yamaha electric start motor with power tilt, RPM speed control, live well, rod storage, pedestal bucket seats, flat bottom floors, depth finder, landing net, bait bucket, safety kit and life preservers",
             'outpost'  => "14' Lund boats with swivel seats, landing nets, bait buckets, paddle and safety kit, powered by 9.9HP or 15HP motors",
         ),
@@ -300,6 +300,88 @@ add_action('admin_init', function() {
     }
 
     /* -----------------------------------------------------
+       Brochure Copy - fbl_brochure_copy option, read via
+       fbl_get_brochure_copy() (inc/brochure-generator.php). Same
+       "own register_setting() under the same settings group" pattern
+       as fbl_brochure_pdf_id below: not a rate figure, needs its own
+       defaults/sanitize path, but still saves through this one
+       screen/button. Split into sections that mirror the brochure's
+       own layout (header, highlights, CTA/closing, footer) purely for
+       readability here - fbl_get_brochure_copy() itself treats it as
+       one flat array.
+       ----------------------------------------------------- */
+    register_setting(
+        'fbl_rate_settings_group',
+        'fbl_brochure_copy',
+        array(
+            'type'              => 'array',
+            'sanitize_callback' => 'fbl_sanitize_brochure_copy',
+            'default'           => fbl_get_brochure_copy(),
+        )
+    );
+
+    add_settings_section(
+        'fbl_rate_section_brochure_copy_header',
+        'Brochure Copy &mdash; Header',
+        function() { echo '<p>Copy for the brochure PDF (built by the Brochure PDF field further down). Save changes here first, then use "Generate PDF" below to rebuild the file from them.</p>'; },
+        'fbl-rates'
+    );
+
+    fbl_add_brochure_copy_fields(array(
+        'eyebrow'    => array('Eyebrow', 'text'),
+        'title'      => array('Title', 'text'),
+        'header_sub' => array('Header subtitle', 'text'),
+        'lede'       => array('Intro paragraph', 'richtext'),
+    ), 'fbl_rate_section_brochure_copy_header');
+
+    add_settings_section(
+        'fbl_rate_section_brochure_copy_highlights',
+        'Brochure Copy &mdash; Highlights',
+        '__return_false',
+        'fbl-rates'
+    );
+
+    fbl_add_brochure_copy_fields(array(
+        'stat1_num'    => array('Stat 1 number', 'text'),
+        'stat1_label'  => array('Stat 1 label', 'text'),
+        'stat2_num'    => array('Stat 2 number', 'text'),
+        'stat2_label'  => array('Stat 2 label', 'text'),
+        'stat3_num'    => array('Stat 3 number', 'text'),
+        'stat3_label'  => array('Stat 3 label', 'text'),
+        'species_line' => array('Species line', 'richtext'),
+    ), 'fbl_rate_section_brochure_copy_highlights');
+
+    add_settings_section(
+        'fbl_rate_section_brochure_copy_cta',
+        'Brochure Copy &mdash; Call to Action &amp; Closing',
+        '__return_false',
+        'fbl-rates'
+    );
+
+    fbl_add_brochure_copy_fields(array(
+        'cta_headline' => array('CTA headline', 'text'),
+        'cta_sub'      => array('CTA subtext', 'text'),
+        'cta_url'      => array('CTA URL (display text)', 'text'),
+        'closing'      => array('Closing line', 'text'),
+    ), 'fbl_rate_section_brochure_copy_cta');
+
+    add_settings_section(
+        'fbl_rate_section_brochure_copy_footer',
+        'Brochure Copy &mdash; Footer',
+        function() { echo '<p>The footer QR code is generated automatically from the URL below at PDF build time - no image upload needed.</p>'; },
+        'fbl-rates'
+    );
+
+    fbl_add_brochure_copy_fields(array(
+        'footer_business'   => array('Business name', 'text'),
+        'footer_address'    => array('Address', 'text'),
+        'footer_phone'      => array('Phone', 'text'),
+        'footer_email'      => array('Email', 'text'),
+        'footer_qr_url'     => array('QR code URL', 'url'),
+        'footer_qr_caption' => array('QR code caption', 'text'),
+    ), 'fbl_rate_section_brochure_copy_footer');
+
+    /* -----------------------------------------------------
        Brochure PDF - a separate option (fbl_brochure_pdf_id),
        not a key on fbl_rate_settings: it's not a rate figure,
        doesn't belong in the fblRateData JS payload, and needs
@@ -476,6 +558,211 @@ function fbl_sanitize_brochure_pdf_id($input) {
 }
 
 /**
+ * Registers one add_settings_field() per brochure-copy field - shared by
+ * every fbl_rate_section_brochure_copy_* group above so the render
+ * callback (type-aware: plain text input, URL input, or one of the two
+ * kses-limited richtext textareas) is written once instead of once per
+ * field.
+ */
+function fbl_add_brochure_copy_fields($fields, $section) {
+    foreach ($fields as $key => $spec) {
+        list($label, $type) = $spec;
+
+        add_settings_field(
+            'fbl_brochure_copy_' . $key,
+            $label,
+            function() use ($key, $type) {
+                $value = fbl_get_brochure_copy()[$key];
+
+                if ($type === 'richtext') {
+                    printf(
+                        '<textarea name="fbl_brochure_copy[%s]" rows="3" class="large-text" required>%s</textarea>
+                         <p class="description">Basic formatting only: <code>&lt;strong&gt;</code> / <code>&lt;b&gt;</code> - everything else is stripped on save.</p>',
+                        esc_attr($key),
+                        esc_textarea($value)
+                    );
+                } elseif ($type === 'url') {
+                    printf(
+                        '<input type="url" name="fbl_brochure_copy[%s]" value="%s" class="regular-text" required>',
+                        esc_attr($key),
+                        esc_attr($value)
+                    );
+                } else {
+                    printf(
+                        '<input type="text" name="fbl_brochure_copy[%s]" value="%s" class="regular-text" required>',
+                        esc_attr($key),
+                        esc_attr($value)
+                    );
+                }
+            },
+            'fbl-rates',
+            $section
+        );
+    }
+}
+
+/**
+ * Sanitize + validate the brochure copy fields. Same "reject a bad
+ * field and keep its previous value, never silently blank it out"
+ * convention as fbl_sanitize_rate_settings() below. 'lede' and
+ * 'species_line' get the same narrow wp_kses() pass
+ * fbl_brochure_kses() (inc/brochure-generator.php) applies again at
+ * render time - belt and suspenders, since output is already kses'd
+ * there too, but there's no reason to let raw unfiltered HTML sit in
+ * the option either. Everything else is plain text.
+ */
+function fbl_sanitize_brochure_copy($input) {
+    $current = fbl_get_brochure_copy();
+    $out     = $current;
+
+    if (!is_array($input)) {
+        return $out;
+    }
+
+    $richtext_fields = array('lede', 'species_line');
+
+    foreach ($current as $key => $current_val) {
+        if (!isset($input[$key])) continue;
+
+        // options.php hands the sanitize_callback the raw, magic-quote
+        // -slashed $_POST value (WP does not unslash before calling it) -
+        // wp_unslash() first, same reasoning as fbl_sanitize_rate_settings()'s
+        // boat_descriptions handling below.
+        $raw = wp_unslash($input[$key]);
+
+        if (in_array($key, $richtext_fields, true)) {
+            $clean = trim(fbl_brochure_kses($raw));
+        } elseif ($key === 'footer_qr_url') {
+            $clean = esc_url_raw(trim($raw));
+        } else {
+            $clean = trim(sanitize_text_field($raw));
+        }
+
+        if ($clean !== '') {
+            $out[$key] = $clean;
+        } else {
+            add_settings_error(
+                'fbl_brochure_copy',
+                'fbl_brochure_copy_' . $key . '_empty',
+                ucwords(str_replace('_', ' ', $key)) . ' cannot be empty. Previous value kept.'
+            );
+        }
+    }
+
+    return $out;
+}
+
+/* ---------------------------------------------------------
+   Generate PDF button - a plain admin-post.php action, not a
+   Settings API field: pressing it performs a side effect (builds a
+   file, writes or replaces a Media Library attachment) rather than
+   just sanitizing and storing form input, so it needs its own <form>
+   and handler instead of living inside the settings group above. See
+   inc/brochure-generator.php's header comment for the tmp-file
+   cleanup and replace-in-place contract this implements.
+   --------------------------------------------------------- */
+add_action('admin_post_fbl_generate_brochure_pdf', 'fbl_handle_generate_brochure_pdf');
+
+function fbl_handle_generate_brochure_pdf() {
+    if (!current_user_can('manage_fbl_rates')) {
+        wp_die('You do not have permission to do this.', 403);
+    }
+    check_admin_referer('fbl_generate_brochure_pdf');
+
+    $tmp_path = fbl_generate_brochure_pdf();
+
+    if (!$tmp_path) {
+        fbl_redirect_brochure_admin('fbl_brochure_generate_failed');
+    }
+
+    $existing_id = fbl_get_brochure_pdf_id();
+    $result_id   = $existing_id
+        ? fbl_replace_brochure_attachment($existing_id, $tmp_path)
+        : fbl_insert_brochure_attachment($tmp_path);
+
+    // Cleanup is this caller's job on every path, success or failure -
+    // fbl_generate_brochure_pdf() never deletes its own tmp file (see
+    // that function's header comment).
+    unlink($tmp_path);
+
+    fbl_redirect_brochure_admin($result_id ? 'fbl_brochure_generated' : 'fbl_brochure_generate_failed');
+}
+
+/**
+ * Regenerate case: overwrite the existing attachment's file in place
+ * and refresh its metadata, rather than inserting a new Media Library
+ * row. $id is assumed already validated (it comes from
+ * fbl_get_brochure_pdf_id(), which checks post type/mime/file
+ * existence), so the only new failure mode here is the copy() itself.
+ */
+function fbl_replace_brochure_attachment($id, $tmp_path) {
+    $file = get_attached_file($id);
+    if (!$file || !@copy($tmp_path, $file)) {
+        return 0;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    wp_update_attachment_metadata($id, wp_generate_attachment_metadata($id, $file));
+
+    return $id;
+}
+
+/**
+ * First-ever generate: sideload the tmp file into the uploads
+ * directory as a new attachment and point fbl_brochure_pdf_id at it.
+ * Every generate after this one goes through
+ * fbl_replace_brochure_attachment() above instead - see the "only the
+ * very first-ever generate should insert" note in
+ * inc/brochure-generator.php's header comment.
+ */
+function fbl_insert_brochure_attachment($tmp_path) {
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+
+    $upload_dir = wp_upload_dir();
+    if (!empty($upload_dir['error'])) {
+        return 0;
+    }
+
+    $filename = wp_unique_filename($upload_dir['path'], 'fish-buck-lake-brochure.pdf');
+    $dest     = trailingslashit($upload_dir['path']) . $filename;
+
+    if (!@copy($tmp_path, $dest)) {
+        return 0;
+    }
+
+    $id = wp_insert_attachment(array(
+        'post_mime_type' => 'application/pdf',
+        'post_title'     => 'Fish Buck Lake Brochure',
+        'post_content'   => '',
+        'post_status'    => 'inherit',
+    ), $dest);
+
+    if (!$id || is_wp_error($id)) {
+        @unlink($dest);
+        return 0;
+    }
+
+    wp_update_attachment_metadata($id, wp_generate_attachment_metadata($id, $dest));
+    update_option('fbl_brochure_pdf_id', $id);
+
+    return $id;
+}
+
+/**
+ * Redirects back to the Rates screen with a one-shot ?notice=1 query
+ * arg for fbl_rates_admin_page() to print as an admin notice. Not the
+ * Settings API's settings_errors() path (this isn't a settings save),
+ * just the plain "action then redirect with a flag" convention every
+ * admin-post.php handler uses.
+ */
+function fbl_redirect_brochure_admin($notice) {
+    wp_safe_redirect(add_query_arg(array('page' => 'fbl-rates', $notice => '1'), admin_url('admin.php')));
+    exit;
+}
+
+/**
  * Sanitize + validate. Non-numeric or negative input is rejected
  * field-by-field: on a bad field we keep the previously saved
  * value for that field (never silently zero it out) and surface
@@ -627,12 +914,38 @@ function fbl_rates_admin_page() {
     <div class="wrap">
         <h1>Rate Estimator Settings</h1>
         <p>These figures drive the Rate Estimator on the booking page and the <code>[fbl_rate]</code> figures on the Rates page. Changes apply immediately.</p>
+
+        <?php
+        // Settings API errors/success (fbl_sanitize_rate_settings(),
+        // fbl_sanitize_brochure_copy(), fbl_sanitize_brochure_pdf_id() all
+        // add_settings_error() into this same queue on a bad submission).
+        settings_errors();
+
+        // Plain one-shot flags from fbl_redirect_brochure_admin() above -
+        // the Generate PDF button isn't a settings save, so it doesn't go
+        // through settings_errors().
+        if (isset($_GET['fbl_brochure_generated'])) {
+            echo '<div class="notice notice-success is-dismissible"><p>Brochure PDF generated and saved.</p></div>';
+        }
+        if (isset($_GET['fbl_brochure_generate_failed'])) {
+            echo '<div class="notice notice-error is-dismissible"><p>Brochure PDF generation failed. Nothing was saved - the previous PDF (if any) is still in place. Please try again.</p></div>';
+        }
+        ?>
+
         <form method="post" action="options.php">
             <?php
             settings_fields('fbl_rate_settings_group');
             do_settings_sections('fbl-rates');
             submit_button();
             ?>
+        </form>
+
+        <h2>Generate Brochure PDF</h2>
+        <p>Builds the brochure PDF from the Brochure Copy fields and the <code>Brochure_FBL</code> photo folder above, and saves it as the file selected in the Brochure PDF field above (replacing it in place if one already exists). <strong>Save your copy changes first</strong> - Generate always uses what's currently saved, not unsaved edits still sitting in the form above.</p>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+            <?php wp_nonce_field('fbl_generate_brochure_pdf'); ?>
+            <input type="hidden" name="action" value="fbl_generate_brochure_pdf">
+            <?php submit_button('Generate PDF', 'primary', 'submit', false); ?>
         </form>
 
         <hr style="margin: 2rem 0;">
