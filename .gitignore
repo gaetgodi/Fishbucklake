@@ -15,3 +15,6 @@ REDIRECT_NO_EQUIVALENT.md
 # Composer dependencies - installed via `composer install` as a deploy
 # step (see deploy-fbl-live.sh / deploy-fbl-staging.sh), not committed.
 vendor/
+
+docs/
+session-summary.md
