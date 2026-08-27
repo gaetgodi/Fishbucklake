@@ -61,10 +61,12 @@
      present on the page (.fbl-calc-wrap), rendered as part of that
      block below the deposit/balance lines rather than floating over
      it. Pages with only bare [fbl_rate] figures and no estimator
-     (e.g. /rates/) have no .fbl-calc-wrap to embed into, so they get
-     the original page-global fixed corner widget instead - one
-     picker still needs to exist somewhere for those figures to be
-     convertible.
+     (e.g. /rates/) have no .fbl-calc-wrap to embed into, so the
+     picker is dropped into the page content itself instead - right
+     under the .rates <h1>, above the packages/pricing block - rather
+     than a page-global overlay (tried fixed bottom-right, then fixed
+     top-right; both read as detached from the prices they affect,
+     and the top one left a blank gap above the content on scroll).
      --------------------------------------------------------- */
   function buildSelector() {
     var host     = document.querySelector('.fbl-calc-wrap');
@@ -118,7 +120,16 @@
         host.appendChild(wrap);
       }
     } else {
-      document.body.appendChild(wrap);
+      var ratesHeading = document.querySelector('.rates h1');
+      if (ratesHeading && ratesHeading.parentNode) {
+        ratesHeading.parentNode.insertBefore(wrap, ratesHeading.nextSibling);
+      } else {
+        // No .rates content block on this page - fall back to a plain
+        // in-flow append at the end of body rather than the old fixed
+        // corner overlay, so a future page with only bare [fbl_rate]
+        // figures still gets a working (if not ideally placed) picker.
+        document.body.appendChild(wrap);
+      }
     }
 
     return select;
