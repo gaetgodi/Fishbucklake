@@ -368,42 +368,42 @@ line is unchanged from the original.
   font-weight: 400;
 }
 
-/* Shared currency picker. Default shape is a fixed corner widget,
+/* Shared currency picker. Default shape is an in-flow discreet badge,
    used on pages with only bare [fbl_rate] figures and no estimator
-   (e.g. /rates/) - there's no estimator block to embed it in, so it
-   has to work floating over whatever Divi layout it lands on. Pinned
-   near the top (not the bottom) so it's seen before a visitor scrolls
-   past the prices it affects, while staying a small, discreet corner
-   badge rather than a banner. */
+   (e.g. /rates/) - there's no estimator block to embed it in. Tried
+   as a page-global fixed overlay first (bottom-right, then top-right)
+   but both read as detached from the prices they affect - a top-right
+   fixed badge also left a blank gap above the content on scroll. JS
+   (buildSelector() in js/currency-converter.js) now inserts this
+   directly into the page content, right under the .rates <h1> and
+   above the packages/pricing block - "near the top of the content,
+   still discreet" per the client's ask, not near the top of the
+   viewport.
+   Sits inside `.rates`, which forces `color: var(--fbl-text-main)
+   !important` on every descendant (css/01-global.css) - every color
+   here needs !important too or that rule wins. */
 .fbl-currency-picker {
-  position: fixed;
-  right: 1rem;
-  top: 1rem;
-  z-index: 9999;
+  position: static;
+  display: block;
+  width: fit-content;
+  margin: 0 auto 2rem auto;
   background: #1a2a1d;
-  color: #d4cfc4;
+  color: #d4cfc4 !important;
   border: 1px solid #2a4030;
   border-radius: 6px;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 1rem;
   font-family: 'Raleway', sans-serif;
   font-size: 0.78rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
 }
-
-/* Clear the WP admin bar (32px desktop / 46px <783px) instead of
-   sitting underneath it for logged-in staff previewing the page. */
-body.admin-bar .fbl-currency-picker {
-  top: calc(32px + 1rem);
-}
-@media (max-width: 782px) {
-  body.admin-bar .fbl-currency-picker {
-    top: calc(46px + 1rem);
-  }
+.fbl-currency-picker label {
+  color: #d4cfc4 !important;
 }
 .fbl-currency-picker select {
   margin-left: 0.4em;
   background: #f0ece4;
-  color: #1a2a1d;
+  color: #1a2a1d !important;
   border: 1px solid #c8bfa8;
   border-radius: 4px;
   padding: 0.15rem 0.4rem;
@@ -414,31 +414,33 @@ body.admin-bar .fbl-currency-picker {
 .fbl-currency-rate {
   margin-top: 0.3rem;
   font-size: 0.72rem;
-  color: #8a9088;
+  color: #8a9088 !important;
 }
 
 @media (max-width: 500px) {
   .fbl-currency-picker {
-    left: 1rem;
-    right: 1rem;
-    top: 0.5rem;
-    text-align: center;
-  }
-  body.admin-bar .fbl-currency-picker {
-    top: calc(46px + 0.5rem);
+    width: auto;
+    margin-left: 1rem;
+    margin-right: 1rem;
   }
 }
 
 /* Embedded variant: the [fbl_rate_estimator] widget (js/currency-
    converter.js's buildSelector()) renders the picker as part of its
-   own flow here instead of the fixed corner widget above - below the
-   deposit/balance lines, above the converted-total row it controls. */
+   own flow here instead of the in-content badge above - below the
+   deposit/balance lines, above the converted-total row it controls.
+   Lives inside .fbl-calc-wrap, not .rates, so none of the !important
+   above is needed to win against .rates * - but it IS needed here,
+   same specificity, to win against .fbl-currency-picker's own
+   !important colors, so give every override here !important too. */
 .fbl-currency-picker--embedded {
   position: static;
+  display: block;
+  width: auto;
   right: auto;
   bottom: auto;
   z-index: auto;
-  margin-top: 1rem;
+  margin: 1rem 0 0 0;
   padding: 1rem 0 0 0;
   background: transparent;
   border: none;
@@ -446,8 +448,11 @@ body.admin-bar .fbl-currency-picker {
   border-radius: 0;
   box-shadow: none;
   text-align: center;
-  color: var(--fbl-text-dim);
+  color: var(--fbl-text-dim) !important;
+}
+.fbl-currency-picker--embedded label {
+  color: var(--fbl-text-dim) !important;
 }
 .fbl-currency-picker--embedded .fbl-currency-rate {
-  color: var(--fbl-text-dim);
+  color: var(--fbl-text-dim) !important;
 }
