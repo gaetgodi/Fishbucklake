@@ -368,27 +368,35 @@ line is unchanged from the original.
   font-weight: 400;
 }
 
-/* Shared currency picker. Default shape is an in-flow discreet badge,
-   used on pages with only bare [fbl_rate] figures and no estimator
-   (e.g. /rates/) - there's no estimator block to embed it in. Tried
-   as a page-global fixed overlay first (bottom-right, then top-right)
-   but both read as detached from the prices they affect - a top-right
-   fixed badge also left a blank gap above the content on scroll. JS
-   (buildSelector() in js/currency-converter.js) now inserts this
-   directly into the page content, right under the .rates <h1> and
-   above the packages/pricing block - "near the top of the content,
-   still discreet" per the client's ask, not near the top of the
-   viewport.
-   Sits inside `.rates`, which forces `color: var(--fbl-text-main)
-   !important` on every descendant (css/01-global.css) - every color
-   here needs !important too or that rule wins. */
+/* Shared currency picker. Default shape/colors here match the rate
+   estimator widget's own established look (same hardcoded palette as
+   .fbl-field select etc. elsewhere in this file), because the
+   --embedded variant below lives inside .fbl-calc-wrap, which already
+   has its own local, skin-independent color scheme (the --fbl-*
+   custom properties at the very top of this file) - deliberately not
+   the site's 00-tokens.css skin system, to match the rest of that
+   widget's controls.
+   The standalone context (.rates, on /rates/ - no .fbl-calc-wrap to
+   sit inside) has no such local scheme to inherit, so the override
+   block further down switches it to the active skin's own
+   00-tokens.css variables instead. That's not just cosmetic: .rates *
+   (css/06-components.css) already forces every descendant's `color`
+   to var(--fbl-text-main) !important, and because that stylesheet
+   happens to be enqueued after this one, it was winning the resulting
+   !important/!important tie against this block's own hardcoded colors
+   - silently swapping them out for whatever the active skin's
+   var(--fbl-text-main) happens to be, which doesn't reliably contrast
+   against a background that's still hardcoded. Matching the skin's
+   own token pairs instead of fighting that rule fixes both problems
+   at once - correct color pairing per skin, and no more dependence on
+   stylesheet load order. */
 .fbl-currency-picker {
   position: static;
   display: block;
   width: fit-content;
   margin: 0 auto 2rem auto;
   background: #1a2a1d;
-  color: #d4cfc4 !important;
+  color: #d4cfc4;
   border: 1px solid #2a4030;
   border-radius: 6px;
   padding: 0.5rem 1rem;
@@ -398,23 +406,43 @@ line is unchanged from the original.
   box-shadow: 0 2px 10px rgba(0,0,0,0.25);
 }
 .fbl-currency-picker label {
-  color: #d4cfc4 !important;
+  color: #d4cfc4;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .fbl-currency-picker select {
-  margin-left: 0.4em;
+  margin-left: 0.5em;
   background: #f0ece4;
-  color: #1a2a1d !important;
+  color: #1a2a1d;
   border: 1px solid #c8bfa8;
-  border-radius: 4px;
-  padding: 0.15rem 0.4rem;
+  border-radius: var(--fbl-radius);
+  padding: 0.3rem 1.75rem 0.3rem 0.6rem;
   font-family: 'Raleway', sans-serif;
   font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a7c59' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.fbl-currency-picker select:focus {
+  outline: none;
+  /* --fbl-green is scoped to .fbl-calc-wrap (top of this file) - only
+     in scope for the embedded variant, so the standalone (/rates/)
+     picker needs its own fallback rather than resolving to nothing. */
+  border-color: var(--fbl-green, #4a7c59);
+  box-shadow: 0 0 0 2px rgba(74,124,89,0.25);
 }
 .fbl-currency-rate {
   margin-top: 0.3rem;
   font-size: 0.72rem;
-  color: #8a9088 !important;
+  color: #8a9088;
 }
 
 @media (max-width: 500px) {
@@ -425,34 +453,95 @@ line is unchanged from the original.
   }
 }
 
+/* Standalone context (/rates/): switch to the active skin's own
+   00-tokens.css pairs. Tried --fbl-mid (a "surface, one step off the
+   page background" token, matching how --fbl-dark/--fbl-text-main
+   pairs for the page section itself) for the box first - wrong,
+   because this site also runs a live per-skin color customizer
+   (inc/color-tweaker.php, inline <style> in <head>) that overrides
+   individual tokens on top of this file. On the active medium skin
+   it currently sets --fbl-text-main to a dark navy, without touching
+   --fbl-mid (still its 00-tokens.css navy) - dark-on-navy, unreadable,
+   and not something visible by reading this file alone.
+   --fbl-content-bg/--fbl-text-main is safer: it's the exact pair
+   #fbl-middle-intro (css/01-global.css) already uses for this page's
+   own body text, so whatever the customizer currently has them set
+   to, they're already a working pair for this page - copying it can't
+   silently mismatch the way a second, independent token could.
+   --fbl-light/--fbl-input-text for the select, below, for the same
+   reason .fbl-mid was wrong for the box: --fbl-input-bg (this skin's
+   actual form-input background, used by every other input on the
+   site) is a mid-grey paired with --fbl-input-text's dark value,
+   ~2.3:1 contrast on this skin - too dark to read.
+   .rates .fbl-currency-picker (0,2,0) already outranks .rates *
+   (0,1,0) on specificity alone, but .rates * is !important, and
+   importance is decided before specificity - so the color rules below
+   need !important too, to win outright rather than by load-order
+   luck. background/border-color aren't contested by .rates * (it only
+   touches `color`), so those don't need it. */
+.rates .fbl-currency-picker {
+  background: var(--fbl-content-bg);
+  border-color: var(--fbl-border-color);
+}
+.rates .fbl-currency-picker,
+.rates .fbl-currency-picker label,
+.rates .fbl-currency-rate {
+  color: var(--fbl-text-main) !important;
+}
+.rates .fbl-currency-picker select {
+  background: var(--fbl-light) !important;
+  color: var(--fbl-input-text) !important;
+  border-color: var(--fbl-border-color);
+}
+
 /* Embedded variant: the [fbl_rate_estimator] widget (js/currency-
    converter.js's buildSelector()) renders the picker as part of its
    own flow here instead of the in-content badge above - below the
    deposit/balance lines, above the converted-total row it controls.
-   Lives inside .fbl-calc-wrap, not .rates, so none of the !important
-   above is needed to win against .rates * - but it IS needed here,
-   same specificity, to win against .fbl-currency-picker's own
-   !important colors, so give every override here !important too. */
+   Lives inside .fbl-calc-wrap, not .rates, so it never has to fight
+   .rates * at all. Same specificity as the base .fbl-currency-picker
+   color rules above (neither is !important since neither has to fight
+   .rates * anymore), so this wins on source order alone - kept
+   !important anyway, defensively, in case that ever changes.
+   background was transparent (just a border-top divider) - fine as
+   long as .fbl-calc-wrap's own near-transparent --fbl-bg
+   (rgba(13,26,20,0.15), meant to let a dark section bleed through)
+   actually sits on something dark. It doesn't right now: the same
+   live color-tweaker override behind the /rates/ fix above also set
+   --fbl-content-bg to white, and #fbl-middle-intro (css/01-global.css)
+   paints every page's center column with it - .fbl-calc-wrap's 15%
+   wash over white blends to ~#dbdddc, near-white, under text-dim's
+   grey (#8a9088) - too faint to read, and it'll happen again any time
+   that setting changes, on any page. Needs its own guaranteed-opaque
+   surface rather than relying on whatever's behind it.
+   First attempt used --fbl-surface2 (dark green) full-width with
+   --fbl-text-dim - too heavy/wide, and dim grey-green text on dark
+   green read as one flat mass instead of two things. Using a light
+   cream card instead - same #f0ece4/#4a5a48/#c8bfa8 treatment as
+   .fbl-breakdown/.fbl-total-cell above, the widget's own established
+   "light card floating on the dark wrap" pattern - matches the rest
+   of this component instead of inventing a new dark-on-dark look, and
+   width: fit-content keeps it a small aside instead of a full-width
+   block. */
 .fbl-currency-picker--embedded {
   position: static;
   display: block;
-  width: auto;
+  width: fit-content;
   right: auto;
   bottom: auto;
   z-index: auto;
-  margin: 1rem 0 0 0;
-  padding: 1rem 0 0 0;
-  background: transparent;
-  border: none;
-  border-top: 1px solid var(--fbl-border);
-  border-radius: 0;
+  margin: 1rem auto 0 auto;
+  padding: 0.6rem 1rem;
+  background: #f0ece4;
+  border: 1px solid #c8bfa8;
+  border-radius: var(--fbl-radius);
   box-shadow: none;
   text-align: center;
-  color: var(--fbl-text-dim) !important;
+  color: #4a5a48 !important;
 }
 .fbl-currency-picker--embedded label {
-  color: var(--fbl-text-dim) !important;
+  color: #4a5a48 !important;
 }
 .fbl-currency-picker--embedded .fbl-currency-rate {
-  color: var(--fbl-text-dim) !important;
+  color: #5a6a58 !important;
 }
