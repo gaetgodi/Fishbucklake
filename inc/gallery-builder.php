@@ -572,8 +572,9 @@ add_action('wp_ajax_fbl_gallery_duplicate_copy', function() {
    The reverse of Promote: copies whatever day-NN.jpg files are
    live in uploads/feature-images right now into a NEW FileBird
    folder as real Media Library photos. Each new photo keeps its
-   day name as its title and filename (day-01, day-02, ...), so
-   the "by Title, A-Z" order shows them in day order.
+   day name as its title and filename (day-01, day-02, ...), and
+   upload times are staggered with day 01 newest, so both the
+   default "newest first" and "by Title, A-Z" show day order.
 
    The live feature-images files are only read (copied to a temp
    file first; sideload moves the temp copy, never the original).
@@ -625,6 +626,9 @@ add_action('wp_ajax_fbl_gallery_archive_catch_start', function() {
         wp_send_json_error('Could not create the new folder.');
     }
 
+    // One reference time for the whole archive, so batches agree on dates.
+    set_transient('fbl_gb_archive_base_' . (int) $created['id'], time(), DAY_IN_SECONDS);
+
     wp_send_json_success(array(
         'folder_id' => (int) $created['id'],
         'name'      => $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fbv WHERE id = %d", (int) $created['id'])),
@@ -654,6 +658,10 @@ add_action('wp_ajax_fbl_gallery_archive_catch_copy', function() {
     $upload_dir = wp_upload_dir();
     $made   = array();
     $errors = array();
+    $base   = (int) get_transient('fbl_gb_archive_base_' . $folder_id);
+    if (!$base) {
+        $base = time();
+    }
 
     foreach (array_slice($days, 0, 5) as $day) {
         $day = (string) $day;
@@ -675,11 +683,20 @@ add_action('wp_ajax_fbl_gallery_archive_catch_copy', function() {
             continue;
         }
 
+        // Day 01 is the newest, each later day one minute older, so the
+        // default "newest first" order (and re-promoting with it) keeps
+        // day order.
+        $date_gmt = gmdate('Y-m-d H:i:s', $base - (int) $day * MINUTE_IN_SECONDS);
+
         $new_id = media_handle_sideload(
             array('name' => $name . '.jpg', 'tmp_name' => $tmp),
             0,
             null,
-            array('post_title' => $name)
+            array(
+                'post_title'    => $name,
+                'post_date'     => get_date_from_gmt($date_gmt),
+                'post_date_gmt' => $date_gmt,
+            )
         );
         if (is_wp_error($new_id)) {
             @unlink($tmp);
@@ -826,10 +843,10 @@ function fbl_gallery_builder_page() {
                     The new folder is a separate copy you can keep, look through, or promote again later.
                 </p>
                 <p>
-                    <strong>Seeing the archived photos in day order:</strong> choose <em>name &ndash; by Title label, A&ndash;Z</em>
-                    (or <em>oldest first</em>) in the Order setting. The normal <em>newest first</em> setting shows them
-                    backwards (day 31 first). This matters most if you ever <strong>promote an archive again</strong>:
-                    pick A&ndash;Z first, or the days will come out reversed.
+                    <strong>Order:</strong> archived photos come out in day order (day-01 first) with the normal
+                    <em>newest first</em> setting, and also with <em>name &ndash; by Title label, A&ndash;Z</em>.
+                    So if you ever <strong>promote an archive again</strong>, you can leave Order as it is and every
+                    photo goes back to the same day. (<em>Oldest first</em> and <em>Z&ndash;A</em> show them in reverse.)
                 </p>
 
                 <h3>Duplicate Gallery or Archive Current Catch of the Day?</h3>
