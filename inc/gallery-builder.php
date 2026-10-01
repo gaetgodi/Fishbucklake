@@ -7,6 +7,7 @@
      their shortcodes in place (Divi 5 encoding-aware)
    - Promotes a folder to Catch of the Day (day-01.jpg ...)
    - Duplicates a folder as real, independent image copies
+   - Archives the live Catch of the Day images into a new folder
    - Built-in "How to use" help panel for editors
    ========================================================= */
 
@@ -566,6 +567,137 @@ add_action('wp_ajax_fbl_gallery_duplicate_copy', function() {
 });
 
 /* ---------------------------------------------------------
+   Archive Current Catch of the Day
+
+   The reverse of Promote: copies whatever day-NN.jpg files are
+   live in uploads/feature-images right now into a NEW FileBird
+   folder as real Media Library photos. Each new photo keeps its
+   day name as its title and filename (day-01, day-02, ...), so
+   the "by Title, A-Z" order shows them in day order.
+
+   The live feature-images files are only read (copied to a temp
+   file first; sideload moves the temp copy, never the original).
+   Same two-step batching as Duplicate Gallery.
+   --------------------------------------------------------- */
+
+/**
+ * Two-digit day numbers of the live Catch of the Day images, in
+ * day order. Null if the folder doesn't exist at all.
+ */
+function fbl_gb_catch_live_days() {
+    $upload_dir = wp_upload_dir();
+    $dir = $upload_dir['basedir'] . '/feature-images';
+    if (!is_dir($dir)) return null;
+
+    $days = array();
+    foreach (scandir($dir) as $f) {
+        if (preg_match('/^day-(0[1-9]|[12][0-9]|3[01])\.jpg$/', $f, $m)) {
+            $days[] = $m[1];
+        }
+    }
+    sort($days);
+    return $days;
+}
+
+add_action('wp_ajax_fbl_gallery_archive_catch_start', function() {
+    global $wpdb;
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery') || !current_user_can('manage_catch_images') || !current_user_can('upload_files')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $new_name = isset($_POST['new_name']) ? trim(sanitize_text_field(wp_unslash($_POST['new_name']))) : '';
+    if ($new_name === '') {
+        wp_send_json_error('Please give the new gallery a name.');
+    }
+    if ($wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}fbv WHERE name = %s", $new_name))) {
+        wp_send_json_error('A folder called "' . $new_name . '" already exists. Please choose a different name.');
+    }
+
+    $days = fbl_gb_catch_live_days();
+    if ($days === null || empty($days)) {
+        wp_send_json_error('There are no Catch of the Day images live right now, so there is nothing to archive.');
+    }
+
+    $created = \FileBird\Model\Folder::newFolder($new_name, 0);
+    if (empty($created['id'])) {
+        wp_send_json_error('Could not create the new folder.');
+    }
+
+    wp_send_json_success(array(
+        'folder_id' => (int) $created['id'],
+        'name'      => $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fbv WHERE id = %d", (int) $created['id'])),
+        'ids'       => $days,
+    ));
+});
+
+add_action('wp_ajax_fbl_gallery_archive_catch_copy', function() {
+    global $wpdb;
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery') || !current_user_can('manage_catch_images') || !current_user_can('upload_files')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $folder_id = isset($_POST['folder_id']) ? (int) $_POST['folder_id'] : 0;
+    $days      = isset($_POST['ids']) ? (array) json_decode(wp_unslash($_POST['ids']), true) : array();
+
+    if (!$folder_id || !$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}fbv WHERE id = %d", $folder_id))) {
+        wp_send_json_error('The new folder no longer exists.');
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+
+    $upload_dir = wp_upload_dir();
+    $made   = array();
+    $errors = array();
+
+    foreach (array_slice($days, 0, 5) as $day) {
+        $day = (string) $day;
+        if (!preg_match('/^(0[1-9]|[12][0-9]|3[01])$/', $day)) {
+            $errors[] = 'Not a valid day: ' . $day;
+            continue;
+        }
+        $name = 'day-' . $day;
+        $src  = $upload_dir['basedir'] . '/feature-images/' . $name . '.jpg';
+        if (!file_exists($src)) {
+            $errors[] = $name . '.jpg is no longer in Catch of the Day.';
+            continue;
+        }
+
+        // Sideload moves its input, so hand it a temp copy.
+        $tmp = wp_tempnam($name . '.jpg');
+        if (!$tmp || !copy($src, $tmp)) {
+            $errors[] = $name . '.jpg: could not copy the file.';
+            continue;
+        }
+
+        $new_id = media_handle_sideload(
+            array('name' => $name . '.jpg', 'tmp_name' => $tmp),
+            0,
+            null,
+            array('post_title' => $name)
+        );
+        if (is_wp_error($new_id)) {
+            @unlink($tmp);
+            $errors[] = $name . '.jpg: ' . $new_id->get_error_message();
+            continue;
+        }
+        update_post_meta($new_id, '_fbl_archived_catch_day', $day);
+        $made[] = (int) $new_id;
+    }
+
+    if ($made) {
+        \FileBird\Model\Folder::assignFolder($folder_id, $made, '');
+    }
+
+    wp_send_json_success(array('copied' => count($made), 'errors' => $errors));
+});
+
+/* ---------------------------------------------------------
    Builder page
    --------------------------------------------------------- */
 function fbl_gallery_builder_page() {
@@ -608,8 +740,8 @@ function fbl_gallery_builder_page() {
                     Every gallery on the website is simply a <strong>folder of photos</strong> in the Media Library
                     (the folder list on the left of <em>Media &rarr; Library</em>). Whatever photos are in the folder
                     are what the gallery shows. This page lets you choose how a folder's photos look on the website,
-                    and also gives you two extra tools: <strong>Promote to Catch of the Day</strong> and
-                    <strong>Duplicate Gallery</strong>.
+                    and also gives you three extra tools: <strong>Promote to Catch of the Day</strong>,
+                    <strong>Duplicate Gallery</strong> and <strong>Archive Current Catch of the Day</strong>.
                 </p>
 
                 <h3>1. Create and fill a gallery</h3>
@@ -678,6 +810,37 @@ function fbl_gallery_builder_page() {
                 </ol>
                 <p>The original folder is not changed. The copies also take up their own space on the server.</p>
 
+                <h3>6. Archive Current Catch of the Day (save what's live right now)</h3>
+                <p>
+                    This saves the photos that are showing in Catch of the Day <strong>right now</strong> into a new folder,
+                    as normal Media Library photos named <em>day-01</em>, <em>day-02</em>, and so on. It doesn't matter which
+                    folder they originally came from, and you don't need to choose a Folder above.
+                </p>
+                <ol>
+                    <li>Click <strong>Archive Current Catch of the Day&hellip;</strong>. A name such as
+                        <em>Catch of the Day &mdash; October 2026</em> is filled in. Change it if you like.</li>
+                    <li>Click OK and <strong>keep this page open</strong> until it says <em>Done</em> (about a minute and a half for a full month).</li>
+                </ol>
+                <p>
+                    Catch of the Day itself is <strong>not changed</strong>: the same photos keep showing on the website.
+                    The new folder is a separate copy you can keep, look through, or promote again later.
+                </p>
+                <p>
+                    <strong>Seeing the archived photos in day order:</strong> choose <em>name &ndash; by Title label, A&ndash;Z</em>
+                    (or <em>oldest first</em>) in the Order setting. The normal <em>newest first</em> setting shows them
+                    backwards (day 31 first). This matters most if you ever <strong>promote an archive again</strong>:
+                    pick A&ndash;Z first, or the days will come out reversed.
+                </p>
+
+                <h3>Duplicate Gallery or Archive Current Catch of the Day?</h3>
+                <ul style="list-style: disc; margin-left: 20px;">
+                    <li><strong>Duplicate Gallery</strong> copies a <em>folder</em>. Use it to keep a month's gallery
+                        <em>before</em> you change or reuse that folder.</li>
+                    <li><strong>Archive Current Catch of the Day</strong> copies <em>what is live on the website</em>.
+                        Use it if you forgot to duplicate before promoting, if the original folder has since changed,
+                        or if you simply want to save exactly what's showing right now.</li>
+                </ul>
+
                 <h3>Suggested monthly routine</h3>
                 <ol>
                     <li><strong>Build this month's gallery:</strong> make a folder (e.g. <em>Catch of the Day &mdash; November 2026</em>)
@@ -687,6 +850,8 @@ function fbl_gallery_builder_page() {
                     <li><strong>Before next month, keep a copy:</strong> if you'll reuse or change this folder, choose it and click
                         <strong>Duplicate Gallery&hellip;</strong> to save the month (e.g. <em>&hellip; &mdash; November 2026 archive</em>).
                         If you always start a brand-new folder each month, the old folder already is your archive and this step is optional.</li>
+                    <li><strong>Forgot?</strong> Before you promote the next month, click <strong>Archive Current Catch of the Day&hellip;</strong>
+                        to save the month that is still live.</li>
                     <li><strong>Next month:</strong> build and promote the new month's gallery the same way. Promoting replaces the previous month automatically.</li>
                 </ol>
             </div>
@@ -895,6 +1060,30 @@ function fbl_gallery_builder_page() {
                 <span id="fblgb-duplicate-status" style="margin-left: 10px;"></span>
             </p>
             <div id="fblgb-duplicate-report"></div>
+            <?php endif; ?>
+
+            <?php if (current_user_can('manage_catch_images') && current_user_can('upload_files')):
+                $live_days = fbl_gb_catch_live_days();
+                $live_count = $live_days ? count($live_days) : 0;
+            ?>
+            <hr>
+
+            <h2>Archive Current Catch of the Day</h2>
+            <p class="description">
+                Saves the photos that are live in Catch of the Day <strong>right now</strong> into a new folder,
+                as normal Media Library photos named day-01, day-02, &hellip;
+                Use it to keep the current month if you didn't duplicate its gallery before promoting.
+                Catch of the Day itself is not changed. This doesn't use the Folder chosen above.
+            </p>
+            <p>
+                <button type="button" class="button" id="fblgb-archive" <?php disabled($live_count, 0); ?>>Archive Current Catch of the Day&hellip;</button>
+                <span id="fblgb-archive-status" style="margin-left: 10px;">
+                    <?php echo $live_count
+                        ? esc_html($live_count . ' photo(s) are live in Catch of the Day.')
+                        : 'There are no Catch of the Day photos live right now.'; ?>
+                </span>
+            </p>
+            <div id="fblgb-archive-report"></div>
             <?php endif; ?>
         </div>
 
@@ -1274,20 +1463,21 @@ function fbl_gallery_builder_page() {
                     });
             }
 
-            function duplicateGallery() {
-                var source = els.folder.value;
+            // Shared by Duplicate Gallery and Archive Current Catch of the Day:
+            // ask for a folder name, create it (startAction), then copy the
+            // returned items a couple at a time (copyAction) with progress.
+            function runCopyJob(opts) {
                 var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                               'August', 'September', 'October', 'November', 'December'];
                 var now = new Date();
-                var name = prompt('Name for the new copy of "' + source + '":',
-                                  source + ' — ' + months[now.getMonth()] + ' ' + now.getFullYear());
+                var name = prompt(opts.promptText, opts.defaultName + ' — ' + months[now.getMonth()] + ' ' + now.getFullYear());
                 if (name === null) return;
                 name = name.trim();
                 if (!name) { alert('Please enter a name.'); return; }
 
-                var status = document.getElementById('fblgb-duplicate-status');
-                var report = document.getElementById('fblgb-duplicate-report');
-                var btn = document.getElementById('fblgb-duplicate');
+                var status = document.getElementById(opts.prefix + '-status');
+                var report = document.getElementById(opts.prefix + '-report');
+                var btn = document.getElementById(opts.prefix);
                 btn.disabled = true;
                 report.innerHTML = '';
                 status.textContent = 'Creating folder...';
@@ -1304,7 +1494,7 @@ function fbl_gallery_builder_page() {
                     report.innerHTML = '<p style="color:#dc3232;">' + escapeHtml(String(msg)) + '</p>';
                 }
 
-                post({ action: 'fbl_gallery_duplicate_start', folder: source, new_name: name })
+                post(Object.assign({ action: opts.startAction, new_name: name }, opts.params))
                     .then(function(res) {
                         if (!res.success) { fail(res.data || 'Unknown error.'); return; }
 
@@ -1329,8 +1519,8 @@ function fbl_gallery_builder_page() {
                             status.textContent = 'Copying photo ' + (copied + errors.length + 1) + ' of ' + total +
                                 '... please keep this page open.';
                             var batch = queue.splice(0, 2);
-                            post({ action: 'fbl_gallery_duplicate_copy', folder: source,
-                                   folder_id: info.folder_id, ids: JSON.stringify(batch) })
+                            post(Object.assign({ action: opts.copyAction, folder_id: info.folder_id,
+                                                 ids: JSON.stringify(batch) }, opts.params))
                                 .then(function(r) {
                                     if (!r.success) { fail(r.data || 'Unknown error.'); return; }
                                     copied += r.data.copied;
@@ -1344,7 +1534,30 @@ function fbl_gallery_builder_page() {
                         }
                         next();
                     })
-                    .catch(function() { fail('Duplicate request failed.'); });
+                    .catch(function() { fail('Request failed.'); });
+            }
+
+            function duplicateGallery() {
+                var source = els.folder.value;
+                runCopyJob({
+                    prefix: 'fblgb-duplicate',
+                    promptText: 'Name for the new copy of "' + source + '":',
+                    defaultName: source,
+                    startAction: 'fbl_gallery_duplicate_start',
+                    copyAction: 'fbl_gallery_duplicate_copy',
+                    params: { folder: source }
+                });
+            }
+
+            function archiveCatch() {
+                runCopyJob({
+                    prefix: 'fblgb-archive',
+                    promptText: 'Name for the new gallery holding the current Catch of the Day photos:',
+                    defaultName: 'Catch of the Day',
+                    startAction: 'fbl_gallery_archive_catch_start',
+                    copyAction: 'fbl_gallery_archive_catch_copy',
+                    params: {}
+                });
             }
 
             function escapeHtml(s) {
@@ -1390,6 +1603,9 @@ function fbl_gallery_builder_page() {
 
             var duplicateBtn = document.getElementById('fblgb-duplicate');
             if (duplicateBtn) duplicateBtn.addEventListener('click', duplicateGallery);
+
+            var archiveBtn = document.getElementById('fblgb-archive');
+            if (archiveBtn) archiveBtn.addEventListener('click', archiveCatch);
 
             build();
             loadFolderTitles();
