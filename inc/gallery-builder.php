@@ -5,6 +5,7 @@
    - Live preview panel (AJAX, renders real shortcode output)
    - Finds pages using the selected folder and can update
      their shortcodes in place (Divi 5 encoding-aware)
+   - Promotes a folder to Catch of the Day (day-01.jpg ...)
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -306,6 +307,102 @@ add_action('wp_ajax_fbl_gallery_update_pages', function() {
 });
 
 /* ---------------------------------------------------------
+   AJAX: promote a folder to Catch of the Day
+
+   Writes the folder's images, in the builder's chosen order,
+   into uploads/feature-images as day-01.jpg ... day-NN.jpg
+   (max 31), replacing the previous set. The front-end Catch of
+   the Day code only ever reads that folder by those names.
+
+   Source attachments, their files and the FileBird folder are
+   only read, never written. The new set is built in a temp dir
+   first and only swapped in if every image converted, so a
+   failure leaves the live set exactly as it was.
+   --------------------------------------------------------- */
+add_action('wp_ajax_fbl_gallery_promote_catch', function() {
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery') || !current_user_can('manage_catch_images')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $folder  = isset($_POST['folder']) ? sanitize_text_field(wp_unslash($_POST['folder'])) : '';
+    $order   = isset($_POST['order']) ? sanitize_key($_POST['order']) : 'date_desc';
+    $shuffle = isset($_POST['shuffle']) ? sanitize_key($_POST['shuffle']) : 'pageload';
+
+    if ($folder === '') {
+        wp_send_json_error('No folder given.');
+    }
+    if (!in_array($order, array('date_desc', 'date_asc', 'name', 'name_desc', 'random'), true)) {
+        $order = 'date_desc';
+    }
+    if (!in_array($shuffle, array('pageload', 'daily', 'weekly', 'never'), true)) {
+        $shuffle = 'pageload';
+    }
+
+    // Same lookup + ordering the [fbl_gallery] shortcode uses, so the
+    // sequence matches what the gallery displays with these settings.
+    $ids = fbl_gallery_get_ids($folder);
+    if ($ids === null) {
+        wp_send_json_error('Folder "' . $folder . '" not found.');
+    }
+    if (empty($ids)) {
+        wp_send_json_error('Folder "' . $folder . '" contains no images.');
+    }
+
+    $ids   = fbl_gallery_order_ids($ids, $order, $shuffle, $folder);
+    $total = count($ids);
+    $pick  = array_slice($ids, 0, 31);
+
+    $upload_dir = wp_upload_dir();
+    $catch_dir  = $upload_dir['basedir'] . '/feature-images';
+    if (!wp_mkdir_p($catch_dir)) {
+        wp_send_json_error('Could not create the Catch of the Day folder.');
+    }
+
+    $tmp_dir = $catch_dir . '/.promote-' . wp_generate_password(8, false, false);
+    if (!wp_mkdir_p($tmp_dir)) {
+        wp_send_json_error('Could not create a temporary folder.');
+    }
+
+    $made   = array();
+    $errors = array();
+
+    foreach ($pick as $i => $att_id) {
+        $day = sprintf('%02d', $i + 1);
+        $res = fbl_catch_make_day_image(get_attached_file($att_id), $tmp_dir . '/day-' . $day . '.jpg', 1920, 88);
+
+        if ($res === true) {
+            $made[] = array('day' => $day, 'title' => get_the_title($att_id));
+        } else {
+            $errors[] = 'day-' . $day . ' (' . get_the_title($att_id) . '): ' . $res;
+        }
+    }
+
+    if (!empty($errors)) {
+        foreach (glob($tmp_dir . '/*') as $f) @unlink($f);
+        @rmdir($tmp_dir);
+        wp_send_json_error('Nothing was changed - some images could not be processed: ' . implode(' | ', array_slice($errors, 0, 10)));
+    }
+
+    // Swap in: clear the old day set, then move the new one into place.
+    foreach (glob($catch_dir . '/day-*.jpg') as $old) {
+        if (preg_match('/day-(0[1-9]|[12][0-9]|3[01])\.jpg$/', $old)) @unlink($old);
+    }
+    foreach ($made as $m) {
+        rename($tmp_dir . '/day-' . $m['day'] . '.jpg', $catch_dir . '/day-' . $m['day'] . '.jpg');
+    }
+    @rmdir($tmp_dir);
+
+    wp_send_json_success(array(
+        'count'     => count($made),
+        'total'     => $total,
+        'days'      => $made,
+        'catch_url' => admin_url('admin.php?page=fbl-catch-images'),
+    ));
+});
+
+/* ---------------------------------------------------------
    Builder page
    --------------------------------------------------------- */
 function fbl_gallery_builder_page() {
@@ -510,6 +607,23 @@ function fbl_gallery_builder_page() {
                 <span class="description" style="margin-left: 10px;">A revision is saved for each page - undo via page revision history.</span>
             </p>
             <div id="fblgb-update-report"></div>
+
+            <?php if (current_user_can('manage_catch_images')): ?>
+            <hr>
+
+            <h2>Promote to Catch of the Day</h2>
+            <p class="description">
+                Copies this folder's images into Catch of the Day as day-01.jpg, day-02.jpg, &hellip;
+                in the <strong>Order</strong> chosen above (the order the preview shows), up to 31 images.
+                <strong>This replaces the current Catch of the Day images.</strong>
+                The folder and its images are not changed.
+            </p>
+            <p>
+                <button type="button" class="button" id="fblgb-promote">Promote to Catch of the Day</button>
+                <span id="fblgb-promote-status" style="margin-left: 10px;"></span>
+            </p>
+            <div id="fblgb-promote-report"></div>
+            <?php endif; ?>
         </div>
 
         <!-- ================= PREVIEW PANEL ================= -->
@@ -828,6 +942,66 @@ function fbl_gallery_builder_page() {
                     });
             }
 
+            function promoteCatch() {
+                var folder = els.folder.value;
+                var orderLabel = els.order.options[els.order.selectedIndex].text;
+                if (els.order.value === 'random') {
+                    orderLabel += ', shuffle: ' + els.shuffle.options[els.shuffle.selectedIndex].text;
+                }
+
+                if (!confirm('Replace ALL current Catch of the Day images with the images from "' + folder + '"?\n\n' +
+                             'Order: ' + orderLabel + '\n\n' +
+                             'The current Catch of the Day set will be deleted. The folder itself is not changed.')) {
+                    return;
+                }
+
+                var status = document.getElementById('fblgb-promote-status');
+                var report = document.getElementById('fblgb-promote-report');
+                var btn = document.getElementById('fblgb-promote');
+                btn.disabled = true;
+                status.textContent = 'Promoting... (resizing each image, this can take a minute)';
+                report.innerHTML = '';
+
+                var body = new URLSearchParams();
+                body.append('action', 'fbl_gallery_promote_catch');
+                body.append('nonce', nonce);
+                body.append('folder', folder);
+                body.append('order', els.order.value);
+                body.append('shuffle', els.shuffle.value);
+
+                fetch(ajaxurl, { method: 'POST', body: body })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        btn.disabled = false;
+                        if (!res.success) {
+                            status.textContent = '';
+                            report.innerHTML = '<p style="color:#dc3232;">' + escapeHtml(String(res.data || 'Unknown error.')) + '</p>';
+                            return;
+                        }
+                        var d = res.data;
+                        status.innerHTML = '<span style="color:#00a32a; font-weight:bold;">' + d.count +
+                            ' image(s) are now live as Catch of the Day.</span> <a href="' + d.catch_url + '">View Catch Images</a>';
+
+                        var html = '';
+                        if (d.total > d.count) {
+                            html += '<p class="description">This folder has ' + d.total + ' images; only the first 31 (one per day) were used.</p>';
+                        } else if (d.count < 31) {
+                            html += '<p class="description">This folder has ' + d.count + ' images, so days ' + (d.count + 1) + '-31 have no image.</p>';
+                        }
+                        html += '<table class="widefat striped" style="max-width:480px;"><tbody>';
+                        d.days.forEach(function(m) {
+                            html += '<tr><td style="width:110px;">day-' + m.day + '.jpg</td><td>' + escapeHtml(m.title) + '</td></tr>';
+                        });
+                        html += '</tbody></table>';
+                        report.innerHTML = html;
+                    })
+                    .catch(function() {
+                        btn.disabled = false;
+                        status.textContent = '';
+                        report.innerHTML = '<p style="color:#dc3232;">Promote request failed.</p>';
+                    });
+            }
+
             function escapeHtml(s) {
                 var d = document.createElement('div');
                 d.textContent = s;
@@ -865,6 +1039,9 @@ function fbl_gallery_builder_page() {
 
             els.findBtn.addEventListener('click', findPages);
             els.updateBtn.addEventListener('click', updatePages);
+
+            var promoteBtn = document.getElementById('fblgb-promote');
+            if (promoteBtn) promoteBtn.addEventListener('click', promoteCatch);
 
             build();
             loadFolderTitles();
