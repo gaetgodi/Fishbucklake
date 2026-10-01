@@ -6,6 +6,8 @@
    - Finds pages using the selected folder and can update
      their shortcodes in place (Divi 5 encoding-aware)
    - Promotes a folder to Catch of the Day (day-01.jpg ...)
+   - Duplicates a folder as real, independent image copies
+   - Built-in "How to use" help panel for editors
    ========================================================= */
 
 /* ---------------------------------------------------------
@@ -403,6 +405,167 @@ add_action('wp_ajax_fbl_gallery_promote_catch', function() {
 });
 
 /* ---------------------------------------------------------
+   Duplicate Gallery
+
+   Makes a NEW FileBird folder holding real, independent copies
+   of every image in the source folder: new attachments with
+   their own files, not extra folder links to the same images.
+   (FileBird's drag-to-move removes an image from every folder it
+   is in, so a link-only "copy" would silently lose images.)
+
+   Each copy keeps the source's title, caption, alt text,
+   description and upload date, so date and title orders come
+   out the same as the original. The source folder, its images
+   and their files are only read.
+
+   Runs in two steps so large folders can't time out: _start
+   creates the folder and returns the image list, then the page
+   calls _copy with a few images at a time.
+   --------------------------------------------------------- */
+
+/**
+ * Copy one image attachment into a brand-new attachment.
+ * Returns the new attachment ID or WP_Error.
+ */
+function fbl_gb_copy_attachment($src_id) {
+    $src = get_post($src_id);
+    if (!$src || $src->post_type !== 'attachment' || strpos($src->post_mime_type, 'image/') !== 0) {
+        return new WP_Error('fbl_gb_not_image', 'Not an image.');
+    }
+
+    // The original upload, not WordPress's "-scaled" stand-in.
+    $file = wp_get_original_image_path($src_id);
+    if (!$file || !file_exists($file)) {
+        $file = get_attached_file($src_id);
+    }
+    if (!$file || !file_exists($file)) {
+        return new WP_Error('fbl_gb_missing', 'Image file is missing on the server.');
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+
+    // Sideload moves its input, so hand it a temp copy.
+    $tmp = wp_tempnam(basename($file));
+    if (!$tmp || !copy($file, $tmp)) {
+        return new WP_Error('fbl_gb_copy', 'Could not copy the image file.');
+    }
+
+    $new_id = media_handle_sideload(
+        array('name' => basename($file), 'tmp_name' => $tmp),
+        0,
+        null,
+        array(
+            'post_title'    => $src->post_title,
+            'post_excerpt'  => $src->post_excerpt,
+            'post_content'  => $src->post_content,
+            'post_date'     => $src->post_date,
+            'post_date_gmt' => $src->post_date_gmt,
+        )
+    );
+
+    if (is_wp_error($new_id)) {
+        @unlink($tmp);
+        return $new_id;
+    }
+
+    $alt = get_post_meta($src_id, '_wp_attachment_image_alt', true);
+    if ($alt !== '') {
+        update_post_meta($new_id, '_wp_attachment_image_alt', $alt);
+    }
+    update_post_meta($new_id, '_fbl_duplicated_from', (int) $src_id);
+
+    return (int) $new_id;
+}
+
+add_action('wp_ajax_fbl_gallery_duplicate_start', function() {
+    global $wpdb;
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery') || !current_user_can('upload_files')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $source   = isset($_POST['folder']) ? sanitize_text_field(wp_unslash($_POST['folder'])) : '';
+    $new_name = isset($_POST['new_name']) ? trim(sanitize_text_field(wp_unslash($_POST['new_name']))) : '';
+
+    if ($source === '' || $new_name === '') {
+        wp_send_json_error('Please give the new gallery a name.');
+    }
+
+    $src_folder = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, parent FROM {$wpdb->prefix}fbv WHERE name = %s", $source
+    ));
+    if (!$src_folder) {
+        wp_send_json_error('Folder "' . $source . '" not found.');
+    }
+
+    // Galleries find their folder by name, so names must be unique site-wide.
+    if ($wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}fbv WHERE name = %s", $new_name))) {
+        wp_send_json_error('A folder called "' . $new_name . '" already exists. Please choose a different name.');
+    }
+
+    $ids = fbl_catch_folder_image_ids($source);
+    if (empty($ids)) {
+        wp_send_json_error('Folder "' . $source . '" contains no images.');
+    }
+    sort($ids);
+
+    $created = \FileBird\Model\Folder::newFolder($new_name, (int) $src_folder->parent);
+    if (empty($created['id'])) {
+        wp_send_json_error('Could not create the new folder.');
+    }
+
+    wp_send_json_success(array(
+        'folder_id' => (int) $created['id'],
+        'name'      => $wpdb->get_var($wpdb->prepare("SELECT name FROM {$wpdb->prefix}fbv WHERE id = %d", (int) $created['id'])),
+        'ids'       => $ids,
+    ));
+});
+
+add_action('wp_ajax_fbl_gallery_duplicate_copy', function() {
+    global $wpdb;
+    check_ajax_referer('fbl_gallery_builder', 'nonce');
+
+    if (!current_user_can('manage_fbl_gallery') || !current_user_can('upload_files')) {
+        wp_send_json_error('Not allowed.');
+    }
+
+    $source    = isset($_POST['folder']) ? sanitize_text_field(wp_unslash($_POST['folder'])) : '';
+    $folder_id = isset($_POST['folder_id']) ? (int) $_POST['folder_id'] : 0;
+    $ids       = isset($_POST['ids']) ? array_map('intval', (array) json_decode(wp_unslash($_POST['ids']), true)) : array();
+
+    if (!$folder_id || !$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}fbv WHERE id = %d", $folder_id))) {
+        wp_send_json_error('The new folder no longer exists.');
+    }
+
+    // Only ever copy images that really are in the source folder.
+    $allowed = array_flip(fbl_catch_folder_image_ids($source));
+
+    $made   = array();
+    $errors = array();
+    foreach (array_slice($ids, 0, 5) as $id) {
+        if (!isset($allowed[$id])) {
+            $errors[] = 'Image ' . $id . ' is not in "' . $source . '".';
+            continue;
+        }
+        $new_id = fbl_gb_copy_attachment($id);
+        if (is_wp_error($new_id)) {
+            $errors[] = get_the_title($id) . ': ' . $new_id->get_error_message();
+            continue;
+        }
+        $made[] = $new_id;
+    }
+
+    if ($made) {
+        \FileBird\Model\Folder::assignFolder($folder_id, $made, '');
+    }
+
+    wp_send_json_success(array('copied' => count($made), 'errors' => $errors));
+});
+
+/* ---------------------------------------------------------
    Builder page
    --------------------------------------------------------- */
 function fbl_gallery_builder_page() {
@@ -435,6 +598,99 @@ function fbl_gallery_builder_page() {
     <div class="wrap">
         <h1>FBL Gallery Shortcode Builder</h1>
         <p>Pick a FileBird folder and options. Preview live, copy the shortcode, or update pages already using this folder.</p>
+
+        <details class="fblgb-help" style="background: #fff; border: 1px solid #ccc; border-left: 4px solid #2271b1; padding: 12px 20px; margin: 15px 0 20px; max-width: 980px;">
+            <summary style="cursor: pointer; font-size: 15px; font-weight: 600;">How to use the Gallery Builder (click to open)</summary>
+            <div style="font-size: 14px; line-height: 1.6;">
+
+                <h3>What a "gallery" is</h3>
+                <p>
+                    Every gallery on the website is simply a <strong>folder of photos</strong> in the Media Library
+                    (the folder list on the left of <em>Media &rarr; Library</em>). Whatever photos are in the folder
+                    are what the gallery shows. This page lets you choose how a folder's photos look on the website,
+                    and also gives you two extra tools: <strong>Promote to Catch of the Day</strong> and
+                    <strong>Duplicate Gallery</strong>.
+                </p>
+
+                <h3>1. Create and fill a gallery</h3>
+                <ol>
+                    <li>Go to <em>Media &rarr; Library</em>.</li>
+                    <li>In the folder list on the left, click <strong>New Folder</strong> and give it a clear name,
+                        for example <em>Catch of the Day &mdash; November 2026</em>.</li>
+                    <li>Click the new folder to open it, then upload photos while it is open (they go straight into it),
+                        or drag existing photos from the library onto the folder's name.</li>
+                    <li>To take a photo out of the gallery, open the folder and drag the photo onto a different folder.
+                        Deleting a photo removes it from the whole website, so drag rather than delete if it is used elsewhere.</li>
+                </ol>
+
+                <h3>2. Show a gallery on a page</h3>
+                <ol>
+                    <li>Come back to this page (<em>Media &rarr; Gallery Builder</em>) and choose your folder in <strong>Folder</strong>.</li>
+                    <li>Choose how it should look (View, Columns, Image size, and so on). The <strong>Preview</strong> on the right
+                        updates as you go.</li>
+                    <li>Click <strong>Copy to Clipboard</strong>, then paste it into a Code module on the page in the Divi Builder.</li>
+                    <li>If a page already shows this folder, click <strong>Find Pages</strong> instead, tick the page(s),
+                        and click <strong>Update Selected</strong> to apply your new settings. The old version is kept as
+                        a page revision, so it can be undone.</li>
+                </ol>
+
+                <h3>3. Put the photos in order</h3>
+                <p>The <strong>Order</strong> setting decides the order photos appear in:</p>
+                <ul style="list-style: disc; margin-left: 20px;">
+                    <li><strong>Newest first</strong> (the normal setting) or <strong>oldest first</strong>, by the date each photo was uploaded.</li>
+                    <li><strong>By Title, A&ndash;Z</strong> (or Z&ndash;A). For an exact order, give each photo a Title that starts
+                        with a number (<em>01 Pike</em>, <em>02 Walleye</em>, <em>03 Lake Trout</em>&hellip;) and choose
+                        <em>name &ndash; by Title label, A&ndash;Z</em>. Edit a photo's Title by clicking it in the Media Library.
+                        Use two digits (01, 02 &hellip; 10, 11) so 10 doesn't come before 2.</li>
+                    <li><strong>Random</strong> mixes them up. You then also choose how often the mix changes.</li>
+                </ul>
+                <p>There is no drag-to-reorder: the order always comes from this setting. Check the Preview to see the result.</p>
+
+                <h3>4. Promote to Catch of the Day</h3>
+                <p>
+                    This makes the chosen folder the website's <strong>Catch of the Day</strong>. The first photo becomes
+                    Day 1, the second Day 2, and so on, <strong>in the order the Preview shows</strong> (set by the Order setting above).
+                    The website shows one photo per day of the month: on the 5th, Day 5 is today's catch.
+                </p>
+                <ul style="list-style: disc; margin-left: 20px;">
+                    <li><strong>Up to 31 photos</strong> are used (one per day). If the folder has more, only the first 31 are used.
+                        If it has fewer, the later days simply have no photo.</li>
+                    <li><strong>It replaces the whole previous set.</strong> Last month's Catch of the Day photos are removed from the
+                        Catch of the Day display. There is no undo, which is why it asks you to confirm first.</li>
+                    <li>Your folder and its photos are <strong>not</strong> changed or moved. Only copies are used.</li>
+                    <li>To get last month's set back, promote the folder it came from again.</li>
+                </ul>
+                <p>To promote: choose the folder, check the Order and Preview, click <strong>Promote to Catch of the Day</strong>, and click OK.</p>
+
+                <h3>5. Duplicate Gallery (keep a month before starting the next)</h3>
+                <p>
+                    This makes a <strong>new folder with its own separate copy of every photo</strong> in the chosen folder.
+                    Use it to keep a finished month safely, before you change the folder for the next month.
+                    The copies are completely independent: moving or deleting photos in the original folder later never
+                    affects the copy.
+                </p>
+                <ol>
+                    <li>Choose the folder in <strong>Folder</strong>.</li>
+                    <li>Click <strong>Duplicate Gallery&hellip;</strong>. You'll be asked for a name. A suggestion such as
+                        <em>[folder name] &mdash; October 2026</em> is filled in. Change it if you like (each folder needs its own name).</li>
+                    <li>Click OK and <strong>keep this page open</strong> until it says <em>Done</em>. Large folders take a minute or two
+                        because every photo is copied.</li>
+                </ol>
+                <p>The original folder is not changed. The copies also take up their own space on the server.</p>
+
+                <h3>Suggested monthly routine</h3>
+                <ol>
+                    <li><strong>Build this month's gallery:</strong> make a folder (e.g. <em>Catch of the Day &mdash; November 2026</em>)
+                        and add up to 31 photos.</li>
+                    <li><strong>Set the order:</strong> choose it in Order and check the Preview.</li>
+                    <li><strong>Promote it:</strong> click <strong>Promote to Catch of the Day</strong> on (or just before) the 1st of the month.</li>
+                    <li><strong>Before next month, keep a copy:</strong> if you'll reuse or change this folder, choose it and click
+                        <strong>Duplicate Gallery&hellip;</strong> to save the month (e.g. <em>&hellip; &mdash; November 2026 archive</em>).
+                        If you always start a brand-new folder each month, the old folder already is your archive and this step is optional.</li>
+                    <li><strong>Next month:</strong> build and promote the new month's gallery the same way. Promoting replaces the previous month automatically.</li>
+                </ol>
+            </div>
+        </details>
 
         <?php if (empty($folders)): ?>
             <div class="notice notice-warning"><p>No FileBird folders found. Create folders in Media Library first.</p></div>
@@ -623,6 +879,22 @@ function fbl_gallery_builder_page() {
                 <span id="fblgb-promote-status" style="margin-left: 10px;"></span>
             </p>
             <div id="fblgb-promote-report"></div>
+            <?php endif; ?>
+
+            <?php if (current_user_can('upload_files')): ?>
+            <hr>
+
+            <h2>Duplicate Gallery</h2>
+            <p class="description">
+                Makes a new folder with its own copy of every photo in this folder, for example to keep last
+                month's Catch of the Day photos before you start a new month. The copies are separate files,
+                so later changes to this folder never affect them. This folder is not changed.
+            </p>
+            <p>
+                <button type="button" class="button" id="fblgb-duplicate">Duplicate Gallery&hellip;</button>
+                <span id="fblgb-duplicate-status" style="margin-left: 10px;"></span>
+            </p>
+            <div id="fblgb-duplicate-report"></div>
             <?php endif; ?>
         </div>
 
@@ -1002,6 +1274,79 @@ function fbl_gallery_builder_page() {
                     });
             }
 
+            function duplicateGallery() {
+                var source = els.folder.value;
+                var months = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                              'August', 'September', 'October', 'November', 'December'];
+                var now = new Date();
+                var name = prompt('Name for the new copy of "' + source + '":',
+                                  source + ' — ' + months[now.getMonth()] + ' ' + now.getFullYear());
+                if (name === null) return;
+                name = name.trim();
+                if (!name) { alert('Please enter a name.'); return; }
+
+                var status = document.getElementById('fblgb-duplicate-status');
+                var report = document.getElementById('fblgb-duplicate-report');
+                var btn = document.getElementById('fblgb-duplicate');
+                btn.disabled = true;
+                report.innerHTML = '';
+                status.textContent = 'Creating folder...';
+
+                function post(params) {
+                    var body = new URLSearchParams();
+                    body.append('nonce', nonce);
+                    Object.keys(params).forEach(function(k) { body.append(k, params[k]); });
+                    return fetch(ajaxurl, { method: 'POST', body: body }).then(function(r) { return r.json(); });
+                }
+                function fail(msg) {
+                    btn.disabled = false;
+                    status.textContent = '';
+                    report.innerHTML = '<p style="color:#dc3232;">' + escapeHtml(String(msg)) + '</p>';
+                }
+
+                post({ action: 'fbl_gallery_duplicate_start', folder: source, new_name: name })
+                    .then(function(res) {
+                        if (!res.success) { fail(res.data || 'Unknown error.'); return; }
+
+                        var info = res.data, queue = info.ids.slice(), total = queue.length;
+                        var copied = 0, errors = [];
+
+                        function next() {
+                            if (!queue.length) {
+                                btn.disabled = false;
+                                var opt = document.createElement('option');
+                                opt.value = info.name;
+                                opt.textContent = info.name + ' (' + copied + ' images)';
+                                els.folder.appendChild(opt);
+                                status.innerHTML = '<span style="color:#00a32a; font-weight:bold;">Done: ' + copied + ' of ' + total +
+                                    ' photo(s) copied into &ldquo;' + escapeHtml(info.name) + '&rdquo;.</span>';
+                                if (errors.length) {
+                                    report.innerHTML = '<p style="color:#dc3232;">These could not be copied:<br>' +
+                                        errors.map(escapeHtml).join('<br>') + '</p>';
+                                }
+                                return;
+                            }
+                            status.textContent = 'Copying photo ' + (copied + errors.length + 1) + ' of ' + total +
+                                '... please keep this page open.';
+                            var batch = queue.splice(0, 2);
+                            post({ action: 'fbl_gallery_duplicate_copy', folder: source,
+                                   folder_id: info.folder_id, ids: JSON.stringify(batch) })
+                                .then(function(r) {
+                                    if (!r.success) { fail(r.data || 'Unknown error.'); return; }
+                                    copied += r.data.copied;
+                                    errors = errors.concat(r.data.errors);
+                                    next();
+                                })
+                                .catch(function() {
+                                    fail('Copying stopped (connection problem) after ' + copied + ' of ' + total +
+                                         ' photos. The folder "' + info.name + '" has the photos copied so far.');
+                                });
+                        }
+                        next();
+                    })
+                    .catch(function() { fail('Duplicate request failed.'); });
+            }
+
             function escapeHtml(s) {
                 var d = document.createElement('div');
                 d.textContent = s;
@@ -1042,6 +1387,9 @@ function fbl_gallery_builder_page() {
 
             var promoteBtn = document.getElementById('fblgb-promote');
             if (promoteBtn) promoteBtn.addEventListener('click', promoteCatch);
+
+            var duplicateBtn = document.getElementById('fblgb-duplicate');
+            if (duplicateBtn) duplicateBtn.addEventListener('click', duplicateGallery);
 
             build();
             loadFolderTitles();
